@@ -1,0 +1,15 @@
+{
+    "configurations": [
+        {
+            "name": "Mac",
+            "includePath": [
+                "/usr/include",
+                "/usr/local/include",
+                "${workspaceRoot}"
+            ],
+            "intelliSenseMode": "gcc-x64",
+            "cppStandard": "c++14"
+        }
+    ],
+    "version": 4
+}
