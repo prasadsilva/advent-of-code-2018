@@ -16,13 +16,17 @@ namespace day3 {
     void problem1();
     void problem2();
 }
+namespace day4 {
+    void problem1();
+}
 
 int main(int argc, char const *argv[])
 {
     std::vector<std::vector<std::function<void(void)>>> days = {
         { day1::problem1, day1::problem2 },
         { day2::problem1, day2::problem2 },
-        { day3::problem1, day3::problem2 }
+        { day3::problem1, day3::problem2 },
+        { day4::problem1 }
     };
 
     if (argc > 2) {

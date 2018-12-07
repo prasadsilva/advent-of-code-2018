@@ -3,7 +3,7 @@
 #include <vector>
 #include <array>
 
-bool trace1 = false;
+const bool trace1 = false;
 
 static const int FABRIC_MAX_DIM = 1000;
 
