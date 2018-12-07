@@ -1,7 +1,10 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <array>
 #include <regex>
+#include <map>
+#include <memory>
 
 const bool trace_read = false;
 const bool trace1 = true;
@@ -98,6 +101,59 @@ struct guard_event_t {
     }
 };
 
+struct guard_schedule_t {
+    std::array<bool, 60> minutes_asleep{false};
+
+    void sleeping_from(int minute) {
+        for (int i = minute; i < 60; i++) {
+            minutes_asleep[i] = true;
+        }
+    }
+
+    void awake_from(int minute) {
+        for (int i = minute; i < 60; i++) {
+            minutes_asleep[i] = false;
+        }
+    }
+
+    int get_minutes_slept() {
+        int result = 0;
+        for (auto& slept : minutes_asleep) {
+            result += (slept ? 1 : 0);
+        }
+        return result;
+    }
+};
+
+struct guard_t {
+    int guard_id;
+    std::vector<guard_schedule_t> schedules;
+
+    guard_t(int gid = -1) : guard_id(gid) {}
+
+    void add_schedule(const guard_schedule_t &schedule) {
+        schedules.push_back(schedule);
+    }
+
+    int get_minutes_slept() {
+        int minutes_slept = 0;
+        for (auto& schedule : schedules) {
+            minutes_slept += schedule.get_minutes_slept();
+        }
+        return minutes_slept;
+    }
+
+    int find_minute_slept_the_most() {
+        std::array<int, 60> slept_instances{0};
+        for (auto& schedule : schedules) {
+            for (int i = 0; i < 60; i++) {
+                slept_instances[i] += (schedule.minutes_asleep[i] ? 1 : 0);
+            }
+        }
+        return std::distance(slept_instances.begin(), std::max_element(slept_instances.begin(), slept_instances.end()));
+    }
+};
+
 void read_day4_data(std::vector<guard_event_t> &outdata, const char* filepath) {
     std::ifstream inputStream(filepath);
     guard_event_t guard_event;
@@ -107,6 +163,73 @@ void read_day4_data(std::vector<guard_event_t> &outdata, const char* filepath) {
     }
 }
 
+std::pair<int, int> find_guard_and_minute(std::vector<guard_event_t> &input) {
+    // Sort the events by timestamp
+    std::sort(input.begin(), input.end());
+    if (trace1) {
+        for (auto &ge : input) {
+            std::cout << ge << std::endl;
+        }
+    }
+
+    std::map<int, std::shared_ptr<guard_t>> guards;
+    guard_t guard_data;
+    std::shared_ptr<guard_t> current_guard;
+    guard_schedule_t new_schedule;
+
+    for (auto &ge : input) {
+        switch (ge.action) {
+            case guard_action_e::BEGIN_SHIFT: {
+                // Finalize last guard
+                if (current_guard) {
+                    current_guard->add_schedule(new_schedule);
+                }
+                // Reset tracking schedule
+                new_schedule = guard_schedule_t();
+                // Find new guard in map
+                auto guard_search = guards.find(ge.guard_id);
+                if (guard_search == guards.end()) {
+                    guards[ge.guard_id] = std::make_shared<guard_t>(ge.guard_id);
+                }
+                current_guard = guards[ge.guard_id];
+                break;
+            }
+            case guard_action_e::FALL_ASLEEP: {
+                assert(current_guard);
+                new_schedule.sleeping_from(ge.minute);
+                break;
+            }
+            case guard_action_e::WAKE_UP: {
+                assert(current_guard);
+                new_schedule.awake_from(ge.minute);
+                break;
+            }
+        }
+    }
+    // Finalize last guard
+    if (current_guard) {
+        current_guard->add_schedule(new_schedule);
+    }
+    
+    // Find the guard that sleeps the most
+    int guard_id_who_sleeps_the_most = -1;
+    int max_minutes_slept = 0;
+    for (auto& [guard_id, guard] : guards) {
+        auto guard_minutes_slept = guard->get_minutes_slept();
+        if (guard_minutes_slept > max_minutes_slept) {
+            guard_id_who_sleeps_the_most = guard->guard_id;
+            max_minutes_slept = guard_minutes_slept;
+        }
+    }
+    assert(guard_id_who_sleeps_the_most != -1);
+
+    // Found the guard. Now get the minute that the guard slept the most
+    auto guard = guards[guard_id_who_sleeps_the_most];
+    int minute_slept_the_most = guard->find_minute_slept_the_most();
+
+    return { guard_id_who_sleeps_the_most, minute_slept_the_most };
+}
+
 namespace day4 {
 
     void problem1() {
@@ -114,13 +237,13 @@ namespace day4 {
 
         std::vector<guard_event_t> test1;
         read_day4_data(test1, "data/day4/problem1/test1.txt");
-        // Sort the events by timestamp
-        std::sort(test1.begin(), test1.end());
-        if (trace1) {
-            for (auto &ge : test1) {
-                std::cout << ge << std::endl;
-            }
-        }
+        auto [guard_id, minute] = find_guard_and_minute(test1);
+        assert((guard_id * minute) == 240);
+
+        std::vector<guard_event_t> input;
+        read_day4_data(input, "data/day4/problem1/input.txt");
+        auto [guard_id2, minute2] = find_guard_and_minute(input);
+        std::cout << "Result : " << (guard_id2 * minute2) << std::endl;
     }
 
 }
