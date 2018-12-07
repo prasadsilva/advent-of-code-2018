@@ -7,7 +7,8 @@
 #include <memory>
 
 const bool trace_read = false;
-const bool trace1 = true;
+const bool trace1 = false;
+const bool trace2 = false;
 
 enum class guard_action_e { BEGIN_SHIFT, WAKE_UP, FALL_ASLEEP };
 
@@ -143,14 +144,16 @@ struct guard_t {
         return minutes_slept;
     }
 
-    int find_minute_slept_the_most() {
+    std::pair<int, int> find_minute_slept_the_most() {
         std::array<int, 60> slept_instances{0};
         for (auto& schedule : schedules) {
             for (int i = 0; i < 60; i++) {
                 slept_instances[i] += (schedule.minutes_asleep[i] ? 1 : 0);
             }
         }
-        return std::distance(slept_instances.begin(), std::max_element(slept_instances.begin(), slept_instances.end()));
+        int minute = std::distance(slept_instances.begin(), std::max_element(slept_instances.begin(), slept_instances.end()));
+        int times_slept = slept_instances[minute];
+        return { minute, times_slept };
     }
 };
 
@@ -163,7 +166,7 @@ void read_day4_data(std::vector<guard_event_t> &outdata, const char* filepath) {
     }
 }
 
-std::pair<int, int> find_guard_and_minute(std::vector<guard_event_t> &input) {
+std::pair<int, int> find_guard_and_minute1(std::vector<guard_event_t> &input) {
     // Sort the events by timestamp
     std::sort(input.begin(), input.end());
     if (trace1) {
@@ -225,9 +228,74 @@ std::pair<int, int> find_guard_and_minute(std::vector<guard_event_t> &input) {
 
     // Found the guard. Now get the minute that the guard slept the most
     auto guard = guards[guard_id_who_sleeps_the_most];
-    int minute_slept_the_most = guard->find_minute_slept_the_most();
+    auto [ minute_slept_the_most, _ ] = guard->find_minute_slept_the_most();
 
     return { guard_id_who_sleeps_the_most, minute_slept_the_most };
+}
+
+std::pair<int, int> find_guard_and_minute2(std::vector<guard_event_t> &input) {
+    // Sort the events by timestamp
+    std::sort(input.begin(), input.end());
+    if (trace1) {
+        for (auto &ge : input) {
+            std::cout << ge << std::endl;
+        }
+    }
+
+    std::map<int, std::shared_ptr<guard_t>> guards;
+    guard_t guard_data;
+    std::shared_ptr<guard_t> current_guard;
+    guard_schedule_t new_schedule;
+
+    for (auto &ge : input) {
+        switch (ge.action) {
+            case guard_action_e::BEGIN_SHIFT: {
+                // Finalize last guard
+                if (current_guard) {
+                    current_guard->add_schedule(new_schedule);
+                }
+                // Reset tracking schedule
+                new_schedule = guard_schedule_t();
+                // Find new guard in map
+                auto guard_search = guards.find(ge.guard_id);
+                if (guard_search == guards.end()) {
+                    guards[ge.guard_id] = std::make_shared<guard_t>(ge.guard_id);
+                }
+                current_guard = guards[ge.guard_id];
+                break;
+            }
+            case guard_action_e::FALL_ASLEEP: {
+                assert(current_guard);
+                new_schedule.sleeping_from(ge.minute);
+                break;
+            }
+            case guard_action_e::WAKE_UP: {
+                assert(current_guard);
+                new_schedule.awake_from(ge.minute);
+                break;
+            }
+        }
+    }
+    // Finalize last guard
+    if (current_guard) {
+        current_guard->add_schedule(new_schedule);
+    }
+
+    int guard_id_who_sleeps_the_most_in_single_minute = -1;
+    int max_times_slept = 0;
+    int minute_slept_the_most = -1;
+    for (auto& [guard_id, guard] : guards) {
+        auto [ minute, times_slept ] = guard->find_minute_slept_the_most();
+        if (trace2) std::cout << "#" << guard->guard_id << " slept " << times_slept << " times at minute " << minute << std::endl;
+        if (times_slept > max_times_slept) {
+            max_times_slept = times_slept;
+            guard_id_who_sleeps_the_most_in_single_minute = guard->guard_id;
+            minute_slept_the_most = minute;
+        }
+    }
+    
+    if (trace2) std::cout << "Returning " << guard_id_who_sleeps_the_most_in_single_minute << ", " << minute_slept_the_most << std::endl;
+    return { guard_id_who_sleeps_the_most_in_single_minute, minute_slept_the_most };
 }
 
 namespace day4 {
@@ -237,13 +305,26 @@ namespace day4 {
 
         std::vector<guard_event_t> test1;
         read_day4_data(test1, "data/day4/problem1/test1.txt");
-        auto [guard_id, minute] = find_guard_and_minute(test1);
+        auto [guard_id, minute] = find_guard_and_minute1(test1);
         assert((guard_id * minute) == 240);
 
         std::vector<guard_event_t> input;
         read_day4_data(input, "data/day4/problem1/input.txt");
-        auto [guard_id2, minute2] = find_guard_and_minute(input);
+        auto [guard_id2, minute2] = find_guard_and_minute1(input);
         std::cout << "Result : " << (guard_id2 * minute2) << std::endl;
     }
 
+    void problem2() {
+        std::cout << "Day 4 - Problem 2" << std::endl;
+
+        std::vector<guard_event_t> test1;
+        read_day4_data(test1, "data/day4/problem2/test1.txt");
+        auto [guard_id, minute] = find_guard_and_minute2(test1);
+        assert((guard_id * minute) == 4455);
+
+        std::vector<guard_event_t> input;
+        read_day4_data(input, "data/day4/problem2/input.txt");
+        auto [guard_id2, minute2] = find_guard_and_minute2(input);
+        std::cout << "Result : " << (guard_id2 * minute2) << std::endl;
+    }
 }
