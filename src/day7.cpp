@@ -11,9 +11,11 @@
 #include <map>
 #include <set>
 #include <list>
+#include <stack>
 
 const bool trace_read = false;
 const bool trace1 = false;
+const bool trace2 = true;
 
 struct step_rule_t {
     char dependancy_step;
@@ -127,6 +129,93 @@ std::string find_step_sequence(std::vector<step_rule_t> &input) {
     return step_sequence;
 }
 
+struct worker_t {
+    bool is_idle;
+    int seconds_to_go;
+    char processing_step;
+
+    worker_t() : is_idle(true), seconds_to_go(0), processing_step(0) {}
+};
+
+int find_step_sequence_runtime(std::vector<step_rule_t> &input, int num_workers, int runtime_shift) {
+    std::map<char, std::set<char>> dependencies;
+    for (auto& step_rule : input) {
+        // Ensure dependency step is also added
+        if (dependencies.find(step_rule.dependancy_step) == dependencies.end()) {
+            dependencies[step_rule.dependancy_step] = std::set<char>();
+        }
+        dependencies[step_rule.step].insert(step_rule.dependancy_step);
+    }
+
+    // Flatten map to a list of steps
+    std::list<step_t> steps;
+    for (auto& [id, dependency_steps] : dependencies) {
+        step_t step;
+        step.id = id;
+        step.dependency_steps = dependency_steps;
+        if (trace1) std::cout << "Creating step: " << step.id << " (" << step.dependency_steps.size() << ")" << std::endl;
+        steps.push_back(step);
+    }
+    // Sort list with special sort rule
+    steps.sort();
+
+    int seconds_elapsed = 0;
+    std::vector<worker_t> workers(num_workers);
+    std::stack<int> idle_worker_ids;
+    for (int i = 0; i < num_workers; i++) {
+        idle_worker_ids.push(i);
+    }
+    while (!steps.empty() || idle_worker_ids.size() != workers.size()) {
+        if (trace2) std::cout << "Second " << seconds_elapsed << " (" << idle_worker_ids.size() << " idle workers)" << std::endl;
+        // Tick down active workers
+        for (int i = 0; i < num_workers; i++) {
+            auto& worker = workers[i];
+            if (!worker.is_idle) {
+                worker.seconds_to_go--;
+                if (worker.seconds_to_go == 0) {
+                    worker.is_idle = true;
+                    
+                    // Remove processing step from all other steps' dependencies
+                    for (auto &step : steps) {
+                        step.dependency_steps.erase(worker.processing_step);
+                    }
+                    steps.sort();
+
+                    idle_worker_ids.push(i);
+                }
+            }
+        }
+
+        // We have idle workers. Let's try to assign some work
+        while (!steps.empty() && !idle_worker_ids.empty()) {
+            if (trace2) std::cout << "\tWe have idle workers" << std::endl;
+            // Check if first step in list is clear of dependencies
+            auto& next_step = steps.front();
+            if (!next_step.dependency_steps.empty()) {
+                // Can't assign any work yet. Bail
+                if (trace2) std::cout << "\t" << next_step << " is not dependency free. Bail.." << std::endl;
+                break;
+            }
+            // Step is ready to be assigned
+            auto active_step_id = next_step.id;
+            steps.pop_front();
+
+            // Spool work to idle worker
+            int next_idle_worker_id = idle_worker_ids.top();
+            idle_worker_ids.pop();
+            workers[next_idle_worker_id].seconds_to_go = runtime_shift + (active_step_id - 65 + 1);
+            workers[next_idle_worker_id].is_idle = false;
+            workers[next_idle_worker_id].processing_step = active_step_id;
+            if (trace2) std::cout << "\tAssigning worker(" << next_idle_worker_id << ") to " << active_step_id << " for " << workers[next_idle_worker_id].seconds_to_go << " secs" << std::endl;
+        }
+
+        seconds_elapsed++;
+    }
+
+    if (trace2) std::cout << "Seconds elapsed: " << (seconds_elapsed - 1) << std::endl;
+    return (seconds_elapsed - 1);
+}
+
 namespace day7 {
 
     void problem1() {
@@ -143,6 +232,14 @@ namespace day7 {
 
     void problem2() {
         std::cout << "Day 7 - Problem 2" << std::endl;
+
+        std::vector<step_rule_t> test1;
+        read_day7_data(test1, "data/day7/problem2/test1.txt");
+        assert(find_step_sequence_runtime(test1, 2, 0) == 15);
+
+        std::vector<step_rule_t> input;
+        read_day7_data(input, "data/day7/problem2/input.txt");
+        std::cout << "Result : " << find_step_sequence_runtime(input, 5, 60) << std::endl;
     }
 
 }
