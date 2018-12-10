@@ -6,7 +6,7 @@
         {
             "label": "build",
             "type": "shell",
-            "command": "g++ -std=c++17 -g src/day1.cpp src/day2.cpp src/day3.cpp src/day4.cpp src/day5.cpp src/day6.cpp src/main.cpp -o advent-of-code-2018",
+            "command": "g++ -std=c++17 -g src/day1.cpp src/day2.cpp src/day3.cpp src/day4.cpp src/day5.cpp src/day6.cpp src/day7.cpp src/main.cpp -o advent-of-code-2018",
             "group": {
                 "kind": "build",
                 "isDefault": true
