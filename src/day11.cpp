@@ -55,32 +55,65 @@ template <int serial_number>
 struct fuel_cell_grid_t {
     std::array<std::array<fuel_cell_t<serial_number>, 300>, 300> fuel_cells;
 
+    std::vector<std::array<std::array<int, 300>, 300>> power_total_cache;
+    std::vector<std::array<std::array<bool, 300>, 300>> power_total_cache_calc_bit;
+
     void initialize() {
         for (int y = 0; y < 300; y++) {
             for (int x = 0; x < 300; x++) {
                 fuel_cells[y][x].initialize(x + 1, y + 1);
             }
         }
+        
+        power_total_cache.resize(300);
+        power_total_cache_calc_bit.resize(300);
     }
 
     max_power_coord_t find_coord_of_largest_total_power(int window_sz) {
         max_power_coord_t result;
         int max_power = std::numeric_limits<int>::min();
         int max_d = 300 - window_sz + 1;
+        int window_sz_idx = window_sz - 1;
+
         for (int y = 0; y < max_d; y++) {
             for (int x = 0; x < max_d; x++) {
+
                 int power = 0;
-                for (int j = 0; j < window_sz; j++) {
-                    for (int i = 0; i < window_sz; i++) {
-                        power += fuel_cells[y + j][x + i].power_level;
+
+                if (power_total_cache_calc_bit[window_sz_idx][y][x]) {
+                    power = power_total_cache[window_sz_idx][y][x];
+                } else {
+                    // If we have cached value for window_sz_idx - 1
+                    if (window_sz_idx > 0 && power_total_cache_calc_bit[window_sz_idx - 1][y][x]) {
+                        power += power_total_cache[window_sz_idx - 1][y][x];
+                        // Add totals from right and bottom perimeter
+                        for (int j = 0; j < window_sz; j++) {
+                            power += fuel_cells[y + j][window_sz_idx].power_level;
+                        }
+                        for (int i = 0; i < window_sz - 1; i++) { // Skip last cell (already added in vertical scan above)
+                            power += fuel_cells[window_sz_idx][x + i].power_level;
+                        }
+
+                    } else {
+                        // Do full computation
+                        for (int j = 0; j < window_sz; j++) {
+                            for (int i = 0; i < window_sz; i++) {
+                                power += fuel_cells[y + j][x + i].power_level;
+                            }
+                        }    
                     }
+
+                    power_total_cache[window_sz_idx][y][x] = power;
+                    // power_total_cache_calc_bit[window_sz_idx][y][x] = true;
                 }
+
                 if (power > max_power) {
                     max_power = power;
                     result = { x + 1, y + 1, power };
                 }
             }
         }
+
         std::cout << "Coord for window " << window_sz << ": " << result.x << "," << result.y << " (" << result.power_level << ")" << std::endl;
         return result;
     }
@@ -127,8 +160,10 @@ namespace day11 {
         fuel_cell_grid_t<18> grid_18; grid_18.initialize();
         auto max_coord_and_window_18 = grid_18.find_coord_and_window_of_largest_total_power();
         assert(max_coord_and_window_18.x == 90 && max_coord_and_window_18.y == 269 && max_coord_and_window_18.window_sz == 16);
-        // auto max_coord_and_window_42 = grid.find_coord_and_window_of_largest_total_power(18);
-        // assert(max_coord_and_window_42.x == 232 && max_coord_and_window_42.y == 251 && max_coord_and_window_42.window_sz == 12);
+        
+        fuel_cell_grid_t<42> grid_42; grid_42.initialize();
+        auto max_coord_and_window_42 = grid_42.find_coord_and_window_of_largest_total_power();
+        assert(max_coord_and_window_42.x == 232 && max_coord_and_window_42.y == 251 && max_coord_and_window_42.window_sz == 12);
     }
 
 }
