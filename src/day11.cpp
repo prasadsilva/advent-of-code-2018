@@ -164,6 +164,10 @@ namespace day11 {
         fuel_cell_grid_t<42> grid_42; grid_42.initialize();
         auto max_coord_and_window_42 = grid_42.find_coord_and_window_of_largest_total_power();
         assert(max_coord_and_window_42.x == 232 && max_coord_and_window_42.y == 251 && max_coord_and_window_42.window_sz == 12);
+
+        fuel_cell_grid_t<2866> grid_result; grid_result.initialize();
+        auto max_coord_and_window_result = grid_result.find_coord_and_window_of_largest_total_power();
+        std::cout << "Result: " << max_coord_and_window_result.x << "," << max_coord_and_window_result.y << "," << max_coord_and_window_result.window_sz << std::endl;
     }
 
 }
