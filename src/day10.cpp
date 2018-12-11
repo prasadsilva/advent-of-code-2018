@@ -195,7 +195,7 @@ namespace day10 {
         char command = 0;
         while (command != 'q') {            
             render_output(input, 80, 80);
-            std::cout << "Next command: ";
+            std::cout << "Next command (q:quit, c:force +1 timestep and continue): ";
             std::cin >> command;
 
             switch (command) {
