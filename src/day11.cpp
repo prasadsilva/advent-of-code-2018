@@ -140,6 +140,7 @@ namespace day11 {
 
     void problem1() {
         std::cout << "Day 11 - Problem 1" << std::endl;
+        #if !defined(ONLY_ACTIVATE) || ONLY_ACTIVATE == 11
 
         if (enable_assertions) {
             fuel_cell_t<8> cell_8; cell_8.initialize(3, 5); assert( cell_8.power_level == 4 );
@@ -155,10 +156,13 @@ namespace day11 {
         fuel_cell_grid_t<2866> grid_result; grid_result.initialize();
         auto max_coord = grid_result.find_coord_of_largest_total_power(3);
         std::cout << "Result: " << max_coord.x << "," << max_coord.y << std::endl;
+
+        #endif
     }
 
     void problem2() {
         std::cout << "Day 11 - Problem 2" << std::endl;
+        #if !defined(ONLY_ACTIVATE) || ONLY_ACTIVATE == 11
 
         if (enable_assertions) {
             fuel_cell_grid_t<18> grid_18; grid_18.initialize();
@@ -173,6 +177,8 @@ namespace day11 {
         fuel_cell_grid_t<2866> grid_result; grid_result.initialize();
         auto max_coord_and_window_result = grid_result.find_coord_and_window_of_largest_total_power();
         std::cout << "Result: " << max_coord_and_window_result.x << "," << max_coord_and_window_result.y << "," << max_coord_and_window_result.window_sz << std::endl;
+
+        #endif
     }
 
 }

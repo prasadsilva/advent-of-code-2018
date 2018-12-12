@@ -220,6 +220,7 @@ namespace day7 {
 
     void problem1() {
         std::cout << "Day 7 - Problem 1" << std::endl;
+        #if !defined(ONLY_ACTIVATE) || ONLY_ACTIVATE == 7
 
         std::vector<step_rule_t> test1;
         read_day7_data(test1, "data/day7/problem1/test1.txt");
@@ -228,10 +229,13 @@ namespace day7 {
         std::vector<step_rule_t> input;
         read_day7_data(input, "data/day7/problem1/input.txt");
         std::cout << "Result : " << find_step_sequence(input) << std::endl;
+
+        #endif
     }
 
     void problem2() {
         std::cout << "Day 7 - Problem 2" << std::endl;
+        #if !defined(ONLY_ACTIVATE) || ONLY_ACTIVATE == 7
 
         std::vector<step_rule_t> test1;
         read_day7_data(test1, "data/day7/problem2/test1.txt");
@@ -240,6 +244,8 @@ namespace day7 {
         std::vector<step_rule_t> input;
         read_day7_data(input, "data/day7/problem2/input.txt");
         std::cout << "Result : " << find_step_sequence_runtime(input, 5, 60) << std::endl;
+
+        #endif
     }
 
 }

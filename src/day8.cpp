@@ -72,6 +72,7 @@ namespace day8 {
 
     void problem1() {
         std::cout << "Day 8 - Problem 1" << std::endl;
+        #if !defined(ONLY_ACTIVATE) || ONLY_ACTIVATE == 8
         
         tree_node_t test1;
         read_day8_data(test1, "data/day8/problem1/test1.txt");
@@ -80,10 +81,13 @@ namespace day8 {
         tree_node_t input;
         read_day8_data(input, "data/day8/problem1/input.txt");
         std::cout << "Result : " << sum_metadata(input) << std::endl;
+
+        #endif
     }
 
     void problem2() {
         std::cout << "Day 8 - Problem 2" << std::endl;
+        #if !defined(ONLY_ACTIVATE) || ONLY_ACTIVATE == 8
 
         tree_node_t test1;
         read_day8_data(test1, "data/day8/problem2/test1.txt");
@@ -92,6 +96,8 @@ namespace day8 {
         tree_node_t input;
         read_day8_data(input, "data/day8/problem2/input.txt");
         std::cout << "Result : " << input.compute_value() << std::endl;
+
+        #endif
     }
 
 }

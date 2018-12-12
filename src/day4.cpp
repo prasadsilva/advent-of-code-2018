@@ -302,6 +302,7 @@ namespace day4 {
 
     void problem1() {
         std::cout << "Day 4 - Problem 1" << std::endl;
+        #if !defined(ONLY_ACTIVATE) || ONLY_ACTIVATE == 4
 
         std::vector<guard_event_t> test1;
         read_day4_data(test1, "data/day4/problem1/test1.txt");
@@ -312,10 +313,13 @@ namespace day4 {
         read_day4_data(input, "data/day4/problem1/input.txt");
         auto [guard_id2, minute2] = find_guard_and_minute1(input);
         std::cout << "Result : " << (guard_id2 * minute2) << std::endl;
+
+        #endif
     }
 
     void problem2() {
         std::cout << "Day 4 - Problem 2" << std::endl;
+        #if !defined(ONLY_ACTIVATE) || ONLY_ACTIVATE == 4
 
         std::vector<guard_event_t> test1;
         read_day4_data(test1, "data/day4/problem2/test1.txt");
@@ -326,5 +330,7 @@ namespace day4 {
         read_day4_data(input, "data/day4/problem2/input.txt");
         auto [guard_id2, minute2] = find_guard_and_minute2(input);
         std::cout << "Result : " << (guard_id2 * minute2) << std::endl;
+
+        #endif
     }
 }

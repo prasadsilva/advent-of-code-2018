@@ -174,6 +174,7 @@ namespace day10 {
 
     void problem1() {
         std::cout << "Day 10 - Problem 1" << std::endl;
+        #if !defined(ONLY_ACTIVATE) || ONLY_ACTIVATE == 10
 
         std::vector<point_of_light_t> test1;
         read_day10_data(test1, "data/day10/problem1/test1.txt");
@@ -210,6 +211,8 @@ namespace day10 {
                 }
             }
         }
+
+        #endif
     }
 
     void problem2() {

@@ -100,6 +100,7 @@ namespace day2 {
 
     void problem1() {
         std::cout << "Day 2 - Problem 1" << std::endl;
+        #if !defined(ONLY_ACTIVATE) || ONLY_ACTIVATE == 2
 
         std::vector<std::string> test1;
         read_day2_data(test1, "data/day2/problem1/test1.txt");
@@ -108,10 +109,13 @@ namespace day2 {
         std::vector<std::string> input;
         read_day2_data(input, "data/day2/problem1/input.txt");
         std::cout << "Result : " << get_box_ids_checksum(input) << std::endl;
+
+        #endif
     }
 
     void problem2() {
         std::cout << "Day 2 - Problem 2" << std::endl;
+        #if !defined(ONLY_ACTIVATE) || ONLY_ACTIVATE == 2
 
         std::vector<std::string> test1;
         read_day2_data(test1, "data/day2/problem2/test1.txt");
@@ -120,5 +124,7 @@ namespace day2 {
         std::vector<std::string> input;
         read_day2_data(input, "data/day2/problem2/input.txt");
         std::cout << "Result : " << get_prototype_fabric_box_common_letters(input) << std::endl;
+
+        #endif
     }
 }

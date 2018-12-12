@@ -106,6 +106,7 @@ namespace day3 {
 
     void problem1() {
         std::cout << "Day 3 - Problem 1" << std::endl;
+        #if !defined(ONLY_ACTIVATE) || ONLY_ACTIVATE == 3
 
         std::vector<fabric_rect_t> test1;
         read_day3_data(test1, "data/day3/problem1/test1.txt");
@@ -114,10 +115,13 @@ namespace day3 {
         std::vector<fabric_rect_t> input;
         read_day3_data(input, "data/day3/problem1/input.txt");
         std::cout << "Result : " << get_num_square_inches_overlapping(input) << std::endl;
+
+        #endif
     }
 
     void problem2() {
         std::cout << "Day 3 - Problem 2" << std::endl;
+        #if !defined(ONLY_ACTIVATE) || ONLY_ACTIVATE == 3
 
         std::vector<fabric_rect_t> test1;
         read_day3_data(test1, "data/day3/problem2/test1.txt");
@@ -126,5 +130,7 @@ namespace day3 {
         std::vector<fabric_rect_t> input;
         read_day3_data(input, "data/day3/problem2/input.txt");
         std::cout << "Result : " << find_claim_id_not_overlapping(input) << std::endl;
+
+        #endif
     }
 }

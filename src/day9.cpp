@@ -82,6 +82,7 @@ namespace day9 {
 
     void problem1() {
         std::cout << "Day 9 - Problem 1" << std::endl;
+        #if !defined(ONLY_ACTIVATE) || ONLY_ACTIVATE == 9
         
         assert(compute_high_score(9, 25) == 32);
         assert(compute_high_score(10, 1618) == 8317);
@@ -91,12 +92,17 @@ namespace day9 {
         assert(compute_high_score(30, 5807) == 37305);
 
         std::cout << "Result : " << compute_high_score(464, 70918) << std::endl;
+
+        #endif
     }
 
     void problem2() {
         std::cout << "Day 9 - Problem 2" << std::endl;
+        #if !defined(ONLY_ACTIVATE) || ONLY_ACTIVATE == 9
 
         std::cout << "Result : " << compute_high_score(464, 70918 * 100) << std::endl;
+
+        #endif
     }
 
 }

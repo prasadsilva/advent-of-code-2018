@@ -207,6 +207,7 @@ namespace day6 {
 
     void problem1() {
         std::cout << "Day 6 - Problem 1" << std::endl;
+        #if !defined(ONLY_ACTIVATE) || ONLY_ACTIVATE == 6
 
         std::vector<std::shared_ptr<point_t>> test1;
         read_day6_data(test1, "data/day6/problem1/test1.txt");
@@ -215,10 +216,13 @@ namespace day6 {
         std::vector<std::shared_ptr<point_t>> input;
         read_day6_data(input, "data/day6/problem1/input.txt");
         std::cout << "Result : " << find_largest_finite_area(input) << std::endl;
+
+        #endif
     }
 
     void problem2() {
         std::cout << "Day 6 - Problem 2" << std::endl;
+        #if !defined(ONLY_ACTIVATE) || ONLY_ACTIVATE == 6
 
         std::vector<std::shared_ptr<point_t>> test1;
         read_day6_data(test1, "data/day6/problem2/test1.txt");
@@ -227,6 +231,8 @@ namespace day6 {
         std::vector<std::shared_ptr<point_t>> input;
         read_day6_data(input, "data/day6/problem2/input.txt");
         std::cout << "Result : " << find_area_size_within_limit(input, 10000) << std::endl;
+
+        #endif
     }
 
 }

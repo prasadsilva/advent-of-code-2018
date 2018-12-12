@@ -74,18 +74,24 @@ namespace day5 {
 
     void problem1() {
         std::cout << "Day 5 - Problem 1" << std::endl;
+        #if !defined(ONLY_ACTIVATE) || ONLY_ACTIVATE == 5
 
         assert(get_polymer_length_after_reactions("data/day5/problem1/test1.txt") == 10);
 
         std::cout << "Result : " << get_polymer_length_after_reactions("data/day5/problem1/input.txt") << std::endl;
+
+        #endif
     }
 
     void problem2() {
         std::cout << "Day 5 - Problem 2" << std::endl;
+        #if !defined(ONLY_ACTIVATE) || ONLY_ACTIVATE == 5
 
         assert(get_shortest_polymer_length_after_removing_single_unit("data/day5/problem2/test1.txt") == 4);
 
         std::cout << "Result : " << get_shortest_polymer_length_after_removing_single_unit("data/day5/problem2/input.txt") << std::endl;
+
+        #endif
     }
 
 }

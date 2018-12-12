@@ -40,6 +40,7 @@ namespace day1 {
 
     void problem1() {
         std::cout << "Day 1 - Problem 1" << std::endl;
+        #if !defined(ONLY_ACTIVATE) || ONLY_ACTIVATE == 1
         
         std::vector<int> test1;
         read_day1_data(test1, "data/day1/problem1/test1.txt");
@@ -56,10 +57,13 @@ namespace day1 {
         std::vector<int> input;
         read_day1_data(input, "data/day1/problem1/input.txt");
         std::cout << "Result : " << get_resulting_frequency(input) << std::endl;
+
+        #endif
     }
 
     void problem2() {
         std::cout << "Day 1 - Problem 2" << std::endl;
+        #if !defined(ONLY_ACTIVATE) || ONLY_ACTIVATE == 1
 
         std::vector<int> test1;
         read_day1_data(test1, "data/day1/problem2/test1.txt");
@@ -80,6 +84,8 @@ namespace day1 {
         std::vector<int> input;
         read_day1_data(input, "data/day1/problem2/input.txt");
         std::cout << "Result : " << get_first_repeating_frequency(input) << std::endl;
+
+        #endif
     }
 
 }

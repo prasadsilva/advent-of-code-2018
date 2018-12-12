@@ -6,7 +6,27 @@
         {
             "label": "build",
             "type": "shell",
-            "command": "g++ -std=c++17 -O3 -g src/day1.cpp src/day2.cpp src/day3.cpp src/day4.cpp src/day5.cpp src/day6.cpp src/day7.cpp src/day8.cpp src/day9.cpp src/day10.cpp src/day11.cpp src/main.cpp -o advent-of-code-2018",
+            "command": "g++",
+            "args": [
+                "-std=c++17",
+                "-g",
+                "-DONLY_ACTIVATE=12",
+                "src/day1.cpp",
+                "src/day2.cpp",
+                "src/day3.cpp",
+                "src/day4.cpp",
+                "src/day5.cpp",
+                "src/day6.cpp",
+                "src/day7.cpp",
+                "src/day8.cpp",
+                "src/day9.cpp",
+                "src/day10.cpp",
+                "src/day11.cpp",
+                "src/day12.cpp",
+                "src/main.cpp",
+                "-o",
+                "advent-of-code-2018"
+            ],
             "group": {
                 "kind": "build",
                 "isDefault": true
