@@ -10,7 +10,8 @@
             "args": [
                 "-std=c++17",
                 "-g",
-                "-DONLY_ACTIVATE=12",
+                "-O3",
+                "-DONLY_ACTIVATE=13",
                 "src/day1.cpp",
                 "src/day2.cpp",
                 "src/day3.cpp",
@@ -23,6 +24,7 @@
                 "src/day10.cpp",
                 "src/day11.cpp",
                 "src/day12.cpp",
+                "src/day13.cpp",
                 "src/main.cpp",
                 "-o",
                 "advent-of-code-2018"
