@@ -95,6 +95,36 @@ void make_recipes(environment_t& env, int limit) {
     }
 }
 
+bool has_input(const std::vector<recipe_score_t>& scores, const std::vector<recipe_score_t>& input, int scan_idx) {
+    for (int i = 0; i < input.size(); i++) {
+        if (scores[scan_idx + i].value != input[i].value) {
+            return false;
+        }
+    }
+    return true;
+}
+
+int make_recipes_until_seen(environment_t& env, const std::vector<recipe_score_t>& input) {
+    int last_scan_idx = 0;
+    while (true) {
+        env.tick();
+        // std::cout << env << std::endl;
+        // std::cout << "\tLSI: " << last_scan_idx << std::endl;
+        // Scan input until recipe_scores.sz - input.sz
+        if (env.recipe_scores.size() >= input.size()) {
+            while (last_scan_idx < (env.recipe_scores.size() - input.size())) {
+                if (env.recipe_scores[last_scan_idx].value == input[0].value) {
+                    if (has_input(env.recipe_scores, input, last_scan_idx)) {
+                        return last_scan_idx;
+                    }
+                }
+                last_scan_idx++;            
+            }
+        }        
+    }
+    return -1;
+}
+
 namespace day14 {
 
     void problem1() {
@@ -140,6 +170,37 @@ namespace day14 {
         std::cout << "Day 14 - Problem 2" << std::endl;
         #if !defined(ONLY_ACTIVATE) || ONLY_ACTIVATE == 14
 
+        if (enable_assertions) {
+            {
+                environment_t env({3, 7});
+                std::vector<recipe_score_t> input{5,1,5,8,9};
+                int num_recipes_until_input = make_recipes_until_seen(env, input);
+                assert(num_recipes_until_input == 9);
+            }
+            {
+                environment_t env({3, 7});
+                std::vector<recipe_score_t> input{0,1,2,4,5};
+                int num_recipes_until_input = make_recipes_until_seen(env, input);
+                assert(num_recipes_until_input == 5);
+            }
+            {
+                environment_t env({3, 7});
+                std::vector<recipe_score_t> input{9,2,5,1,0};
+                int num_recipes_until_input = make_recipes_until_seen(env, input);
+                assert(num_recipes_until_input == 18);
+            }
+            {
+                environment_t env({3, 7});
+                std::vector<recipe_score_t> input{5,9,4,1,4};
+                int num_recipes_until_input = make_recipes_until_seen(env, input);
+                assert(num_recipes_until_input == 2018);
+            }
+        }
+
+        environment_t env({3, 7});
+        std::vector<recipe_score_t> input{1,1,0,2,0,1};
+        int num_recipes_until_input = make_recipes_until_seen(env, input);
+        std::cout << "Result: " << num_recipes_until_input << std::endl;
 
         #endif
     }
