@@ -9,13 +9,12 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/advent-of-code-2018",
-            "args": ["12"],
+            "args": ["14"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": false,
-            "MIMode": "lldb",
-            "preLaunchTask": "build"
+            "MIMode": "lldb"
         }
     ]
 }
