@@ -15,20 +15,52 @@ const bool trace1 = true;
 const bool trace2 = false;
 const bool enable_assertions = true;
 
-enum cell_type_e {
-    none = 0,
-    wall,
-
-    unit = 100,
-    goblin,
+enum unit_type_e {
+    goblin = 0,
     elf,
 };
 
-struct cell_t {
+struct unit_t {
+    unit_type_e type;
     int x;
-    int y;
+    int y;  
+    int attack_power = 3;
+    int hit_points = 200;
+
+    bool is_enemy_of(unit_t *other) const {
+        return type != other->type;
+    }
+
+    friend std::ostream & operator << (std::ostream &out, unit_t &unit) {
+        if (unit.type == unit_type_e::goblin) {
+            out << "G(" << unit.hit_points << ")";
+        } else {
+            out << "E(" << unit.hit_points << ")";
+        }
+        return out;
+    }
+};
+
+enum cell_type_e {
+    none = 0,
+    wall,
+    unit,
+};
+
+struct cell_t {
+    int x = -1;
+    int y = -1;
     cell_type_e type = cell_type_e::none;
-    int unit_id = -1;
+    std::shared_ptr<unit_t> unit;
+
+    bool has_unit() const {
+        return (bool)unit;
+    }
+
+    void clear() {
+        type = cell_type_e::none;
+        unit = nullptr;
+    }
 
     // Comparator based on reading order
     bool operator < (const cell_t &other) const {
@@ -43,8 +75,14 @@ struct cell_t {
         char output;
         switch (cell.type) {
             case cell_type_e::wall: output = '#'; break;
-            case cell_type_e::goblin: output = 'G'; break;
-            case cell_type_e::elf: output = 'E'; break;
+            case cell_type_e::unit: {
+                if (cell.unit->type == unit_type_e::goblin) {
+                    output = 'G';
+                } else {
+                    output = 'E';
+                }
+                break;
+            }
             default: output = '.'; break;
         }
         out << output;
@@ -52,20 +90,84 @@ struct cell_t {
     }
 };
 
-struct unit_t {
-    int x;
-    int y;  
-    int attack_power = 3;
-    int hit_points = 200;
-};
-
 struct map_t {
     std::vector<std::vector<cell_t>> cells;
-    std::vector<unit_t> goblins, elves;
+    std::list<std::shared_ptr<unit_t>> goblins, elves;
+    int map_width, map_height;
+
+    void get_enemy_cells_in_range(std::vector<cell_t> &out, unit_t *unit) {
+        out.clear();
+        int x = unit->x;
+        int y = unit->y;
+        std::vector<cell_t> attack_cells;
+        // In read order
+        for (int ay = y - 1; ay < y + 1; ay++) {
+            for (int ax = x - 1; ax < x + 1; ax++) {
+                // Cell is valid?
+                if (ax >= 0 && ay >= 0 && ay < map_height && ax < map_width) {
+                    if (cells[ay][ax].has_unit() && cells[ay][ax].unit->is_enemy_of(unit)) {
+                        attack_cells.push_back(cells[ay][ax]);
+                    }
+                }
+            }
+        }
+        // Sort is unnecessary. Traversal above is in read order
+        // std::sort(out.begin(), out.end());
+    }
+
+    bool attack_enemies_in_range(unit_t *unit) {
+        std::vector<cell_t> adj_enemy_cells;
+        get_enemy_cells_in_range(adj_enemy_cells, unit);
+        auto& enemies = unit->type == unit_type_e::goblin ? goblins : elves;
+        if (!adj_enemy_cells.empty()) {
+            // Find enemy with lowest hit points
+            std::shared_ptr<unit_t> enemy_with_lowest_hp = nullptr;
+            int lowest_hp = 1000;
+            for (int ac = 0; ac < adj_enemy_cells.size(); ac++) {
+                if (adj_enemy_cells[ac].unit->hit_points < lowest_hp) {
+                    enemy_with_lowest_hp = adj_enemy_cells[ac].unit;
+                }
+            }
+            // Deal damage equal to attack power
+            enemy_with_lowest_hp->hit_points -= unit->attack_power;
+            // Is enemy dead?
+            if (enemy_with_lowest_hp->hit_points <= 0) {
+                // Enemy is dead
+                // - Mark cell as empty
+                cells[enemy_with_lowest_hp->y][enemy_with_lowest_hp->x].clear();
+                // - Remove from unit list
+                enemies.remove(enemy_with_lowest_hp);   
+            }
+            return true;
+        }
+        return false;
+    }
+
+    void move_toward_closest_enemy(unit_t *unit) {
+        // TODO: Move
+    }
+
+    void tick_unit(unit_t *unit) {
+        if (!attack_enemies_in_range(unit)) {
+            move_toward_closest_enemy(unit);
+            attack_enemies_in_range(unit);
+        }
+    }
 
     void tick() {
-        // Move if not in range of enemy (single step, first in reading order)
-        // Attack if in range of enemy
+        std::vector<cell_t> unit_cells;
+        for (auto& goblin : goblins) {
+            unit_cells.push_back(cells[goblin->y][goblin->x]);
+        }
+        for (auto& elf : elves) {
+            unit_cells.push_back(cells[elf->y][elf->x]);
+        }
+        // Sort all units
+        std::sort(unit_cells.begin(), unit_cells.end());
+        // Units are now sorted by read order
+        for (auto& unit_cell : unit_cells) {
+            tick_unit(unit_cell.unit.get());
+        }
     }
 
     friend std::istream & operator >> (std::istream &in, map_t &env) {
@@ -84,15 +186,23 @@ struct map_t {
                         break;
                     }
                     case 'G': {
-                        new_cell.type = cell_type_e::goblin;
-                        new_cell.unit_id = env.goblins.size();
-                        env.goblins.push_back({ x, y });
+                        new_cell.type = cell_type_e::unit;
+                        auto goblin = std::make_shared<unit_t>();
+                        goblin->type = unit_type_e::goblin;
+                        goblin->x = x;
+                        goblin->y = y;
+                        new_cell.unit = goblin;
+                        env.goblins.push_back(goblin);
                         break;
                     }
                     case 'E': {
-                        new_cell.type = cell_type_e::elf;
-                        new_cell.unit_id = env.elves.size();
-                        env.elves.push_back({ x, y });
+                        new_cell.type = cell_type_e::unit;
+                        auto elf = std::make_shared<unit_t>();
+                        elf->type = unit_type_e::elf;
+                        elf->x = x;
+                        elf->y = y;
+                        new_cell.unit = elf;
+                        env.elves.push_back(elf);
                         break;
                     }
                 }
@@ -100,6 +210,8 @@ struct map_t {
             }
             env.cells.push_back(new_row);
         }
+        env.map_width = env.cells[0].size();
+        env.map_height = env.cells.size();
         return in;
     }
 
@@ -116,10 +228,8 @@ struct map_t {
             if (!unit_cells_col.empty()) out << "    ";
             for (auto &unit_cell_col : unit_cells_col) {
                 auto& cell = row[unit_cell_col];
-                if (cell.type == cell_type_e::goblin) {
-                    out << "G(" << env.goblins[cell.unit_id].hit_points << "), ";
-                } else {
-                    out << "E(" << env.elves[cell.unit_id].hit_points << "), ";
+                if (cell.type == cell_type_e::unit) {
+                    out << unit << ", ";
                 }
             }
             out << std::endl;
@@ -144,6 +254,10 @@ namespace day15 {
         map_t test1;
         read_day15_data(test1, "data/day15/problem1/test1.txt");
         std::cout << test1 << std::endl;
+        for (int i = 0; i < 2; i++) {
+            test1.tick();
+            std::cout << test1 << std::endl;
+        }
 
         #endif
     }
