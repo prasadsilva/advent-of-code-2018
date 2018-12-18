@@ -57,6 +57,12 @@ struct cell_t {
         return (bool)unit;
     }
 
+    void set_unit(std::shared_ptr<unit_t> _unit) {
+        assert(type == cell_type_e::none);
+        unit = _unit;
+        type = cell_type_e::unit;
+    }
+
     void clear() {
         type = cell_type_e::none;
         unit = nullptr;
@@ -115,9 +121,9 @@ struct map_t {
         // std::sort(out.begin(), out.end());
     }
 
-    bool attack_enemies_in_range(unit_t *unit) {
+    bool attack_enemies_in_range(std::shared_ptr<unit_t> unit) {
         std::vector<cell_t> adj_enemy_cells;
-        get_enemy_cells_in_range(adj_enemy_cells, unit);
+        get_enemy_cells_in_range(adj_enemy_cells, unit.get());
         auto& enemies = unit->type == unit_type_e::goblin ? goblins : elves;
         if (!adj_enemy_cells.empty()) {
             // Find enemy with lowest hit points
@@ -143,11 +149,50 @@ struct map_t {
         return false;
     }
 
-    void move_toward_closest_enemy(unit_t *unit) {
-        // TODO: Move
+    struct reachability_t {
+        cell_t destination;
+        int cost;
+        std::vector<std::pair<int, int>> path;
+
+        // Cost first, then reading order
+        bool operator < (const reachability_t &other) const {
+            if (cost < other.cost) return true;
+            else if (cost == other.cost) {
+                if (destination.y < other.destination.y) return true;
+                else if (destination.y == other.destination.y) {
+                    return destination.x < other.destination.x;
+                }
+            }
+            return false;
+        }
+    };
+
+    std::vector<reachability_t> find_reachable_attack_cells_for(std::shared_ptr<unit_t> unit) const {
+        // TODO
+        return {};
     }
 
-    void tick_unit(unit_t *unit) {
+    void move_unit_towards(std::shared_ptr<unit_t> unit, const reachability_t &target) {
+        // Mark unit cell empty
+        cells[unit->y][unit->x].clear();
+        // Move unit one step in path
+        unit->x = target.path[0].first;
+        unit->y = target.path[0].second;
+        // Mark new unit cell
+        cells[unit->y][unit->x].set_unit(unit);
+    }
+
+    void move_toward_closest_enemy(std::shared_ptr<unit_t> unit) {
+        std::vector<reachability_t> reachable_attack_cells = find_reachable_attack_cells_for(unit);
+        if (reachable_attack_cells.empty()) return;
+
+        // Sort nearest by cost and reading order 
+        std::sort(reachable_attack_cells.begin(), reachable_attack_cells.end());
+        // Choose the first reachable cell
+        move_unit_towards(unit, *reachable_attack_cells.begin());
+    }
+
+    void tick_unit(std::shared_ptr<unit_t> unit) {
         if (!attack_enemies_in_range(unit)) {
             move_toward_closest_enemy(unit);
             attack_enemies_in_range(unit);
@@ -166,7 +211,7 @@ struct map_t {
         std::sort(unit_cells.begin(), unit_cells.end());
         // Units are now sorted by read order
         for (auto& unit_cell : unit_cells) {
-            tick_unit(unit_cell.unit.get());
+            tick_unit(unit_cell.unit);
         }
     }
 
