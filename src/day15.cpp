@@ -8,6 +8,7 @@
 #include <limits>
 #include <array>
 #include <sstream>
+#include "micropather_1_2_0/micropather.h"
 
 const bool trace_read = false;
 const bool trace_elves = false;
@@ -31,11 +32,19 @@ struct unit_t {
         return type != other->type;
     }
 
+    char get_type_char() const {
+        if (type == unit_type_e::goblin) {
+            return 'G';
+        } else {
+            return 'E';
+        }
+    }
+
     friend std::ostream & operator << (std::ostream &out, unit_t &unit) {
         if (unit.type == unit_type_e::goblin) {
-            out << "G(" << unit.hit_points << ")";
+            out << "G(" << unit.x << "," << unit.y << ")(" << unit.hit_points << ")";
         } else {
-            out << "E(" << unit.hit_points << ")";
+            out << "E(" << unit.x << "," << unit.y << ")(" << unit.hit_points << ")";
         }
         return out;
     }
@@ -51,7 +60,7 @@ struct cell_t {
     int x = -1;
     int y = -1;
     cell_type_e type = cell_type_e::none;
-    std::shared_ptr<unit_t> unit;
+    std::shared_ptr<unit_t> unit = nullptr;
 
     bool has_unit() const {
         return (bool)unit;
@@ -82,11 +91,7 @@ struct cell_t {
         switch (cell.type) {
             case cell_type_e::wall: output = '#'; break;
             case cell_type_e::unit: {
-                if (cell.unit->type == unit_type_e::goblin) {
-                    output = 'G';
-                } else {
-                    output = 'E';
-                }
+                output = cell.unit->get_type_char();                
                 break;
             }
             default: output = '.'; break;
@@ -96,51 +101,70 @@ struct cell_t {
     }
 };
 
-struct map_t {
-    std::vector<std::vector<cell_t>> cells;
+struct map_t : public micropather::Graph {
+    std::vector<std::vector<std::shared_ptr<cell_t>>> cells;
     std::list<std::shared_ptr<unit_t>> goblins, elves;
     int map_width, map_height;
 
-    void get_enemy_cells_in_range(std::vector<cell_t> &out, unit_t *unit) {
+    // micropath::Graph interface
+    float LeastCostEstimate(void* stateStart, void* stateEnd) {
+        // TODO
+        return 0.f;
+    }
+    void AdjacentCost(void* state, std::vector<micropather::StateCost> *adjacent) {
+        // TODO
+    }
+    void PrintStateInfo(void* state) {
+        std::cout << *((cell_t*)state);
+    }
+
+
+    void get_enemy_cells_in_range(std::vector<cell_t*> &out, unit_t *unit) {
         out.clear();
         int x = unit->x;
         int y = unit->y;
-        std::vector<cell_t> attack_cells;
         // In read order
-        for (int ay = y - 1; ay < y + 1; ay++) {
-            for (int ax = x - 1; ax < x + 1; ax++) {
-                // Cell is valid?
-                if (ax >= 0 && ay >= 0 && ay < map_height && ax < map_width) {
-                    if (cells[ay][ax].has_unit() && cells[ay][ax].unit->is_enemy_of(unit)) {
-                        attack_cells.push_back(cells[ay][ax]);
-                    }
-                }
+        constexpr std::pair<int, int> valid_deltas[4] = {
+            {0, -1},
+            {-1, 0},
+            {1, 0},
+            {0, 1}
+        };
+        for (auto [dx, dy] : valid_deltas) {
+            auto cell = cells[y + dy][x + dx].get();
+            if (cell->has_unit() && cell->unit->is_enemy_of(unit)) {
+                assert(cell->type == cell_type_e::unit);
+                out.push_back(cell);
             }
         }
+
         // Sort is unnecessary. Traversal above is in read order
-        // std::sort(out.begin(), out.end());
+        // std::sort(out.begin(), out.end(), [](cell_t *a, cell_t *b) { return *a < *b; });
     }
 
     bool attack_enemies_in_range(std::shared_ptr<unit_t> unit) {
-        std::vector<cell_t> adj_enemy_cells;
+        std::vector<cell_t*> adj_enemy_cells;
         get_enemy_cells_in_range(adj_enemy_cells, unit.get());
         auto& enemies = unit->type == unit_type_e::goblin ? goblins : elves;
         if (!adj_enemy_cells.empty()) {
             // Find enemy with lowest hit points
             std::shared_ptr<unit_t> enemy_with_lowest_hp = nullptr;
             int lowest_hp = 1000;
-            for (int ac = 0; ac < adj_enemy_cells.size(); ac++) {
-                if (adj_enemy_cells[ac].unit->hit_points < lowest_hp) {
-                    enemy_with_lowest_hp = adj_enemy_cells[ac].unit;
+            // for (int ac = 0; ac < adj_enemy_cells.size(); ac++) {
+            for (auto& adj_enemy_cell : adj_enemy_cells) {                
+                if (adj_enemy_cell->unit->hit_points < lowest_hp) {
+                    enemy_with_lowest_hp = adj_enemy_cell->unit;
+                    lowest_hp = enemy_with_lowest_hp->hit_points;
                 }
             }
             // Deal damage equal to attack power
+            if (trace1) std::cout << "\t\tAttacking " << enemy_with_lowest_hp->get_type_char() << "(" << enemy_with_lowest_hp->x << "," << enemy_with_lowest_hp->y << ")" << std::endl;
             enemy_with_lowest_hp->hit_points -= unit->attack_power;
             // Is enemy dead?
             if (enemy_with_lowest_hp->hit_points <= 0) {
                 // Enemy is dead
                 // - Mark cell as empty
-                cells[enemy_with_lowest_hp->y][enemy_with_lowest_hp->x].clear();
+                cells[enemy_with_lowest_hp->y][enemy_with_lowest_hp->x]->clear();
                 // - Remove from unit list
                 enemies.remove(enemy_with_lowest_hp);   
             }
@@ -174,12 +198,12 @@ struct map_t {
 
     void move_unit_towards(std::shared_ptr<unit_t> unit, const reachability_t &target) {
         // Mark unit cell empty
-        cells[unit->y][unit->x].clear();
+        cells[unit->y][unit->x]->clear();
         // Move unit one step in path
         unit->x = target.path[0].first;
         unit->y = target.path[0].second;
         // Mark new unit cell
-        cells[unit->y][unit->x].set_unit(unit);
+        cells[unit->y][unit->x]->set_unit(unit);
     }
 
     void move_toward_closest_enemy(std::shared_ptr<unit_t> unit) {
@@ -200,18 +224,20 @@ struct map_t {
     }
 
     void tick() {
-        std::vector<cell_t> unit_cells;
+        if (trace1) std::cout << "Starting round" << std::endl;
+        std::vector<cell_t *> unit_cells;
         for (auto& goblin : goblins) {
-            unit_cells.push_back(cells[goblin->y][goblin->x]);
+            unit_cells.push_back(cells[goblin->y][goblin->x].get());
         }
         for (auto& elf : elves) {
-            unit_cells.push_back(cells[elf->y][elf->x]);
+            unit_cells.push_back(cells[elf->y][elf->x].get());
         }
         // Sort all units
-        std::sort(unit_cells.begin(), unit_cells.end());
+        std::sort(unit_cells.begin(), unit_cells.end(), [](cell_t *a, cell_t *b) { return *a < *b; });
         // Units are now sorted by read order
         for (auto& unit_cell : unit_cells) {
-            tick_unit(unit_cell.unit);
+            if (trace1) std::cout << "\tTicking " << unit_cell->unit->get_type_char() << "(" << unit_cell->unit->x << "," << unit_cell->unit->y << ")" << std::endl;
+            tick_unit(unit_cell->unit);
         }
     }
 
@@ -220,33 +246,33 @@ struct map_t {
         while (!in.eof()) {
             int y = env.cells.size();
             getline(in, line);
-            std::vector<cell_t> new_row;
+            std::vector<std::shared_ptr<cell_t>> new_row;
             for (int x = 0; x < line.size(); x++) {
-                cell_t new_cell;
-                new_cell.x = x;
-                new_cell.y = y;
+                std::shared_ptr<cell_t> new_cell = std::make_shared<cell_t>();
+                new_cell->x = x;
+                new_cell->y = y;
                 switch (line[x]) {
                     case '#': {
-                        new_cell.type = cell_type_e::wall;
+                        new_cell->type = cell_type_e::wall;
                         break;
                     }
                     case 'G': {
-                        new_cell.type = cell_type_e::unit;
+                        new_cell->type = cell_type_e::unit;
                         auto goblin = std::make_shared<unit_t>();
                         goblin->type = unit_type_e::goblin;
                         goblin->x = x;
                         goblin->y = y;
-                        new_cell.unit = goblin;
+                        new_cell->unit = goblin;
                         env.goblins.push_back(goblin);
                         break;
                     }
                     case 'E': {
-                        new_cell.type = cell_type_e::unit;
+                        new_cell->type = cell_type_e::unit;
                         auto elf = std::make_shared<unit_t>();
                         elf->type = unit_type_e::elf;
                         elf->x = x;
                         elf->y = y;
-                        new_cell.unit = elf;
+                        new_cell->unit = elf;
                         env.elves.push_back(elf);
                         break;
                     }
@@ -261,24 +287,21 @@ struct map_t {
     }
 
     friend std::ostream & operator << (std::ostream &out, map_t &env) {
-        std::vector<int> unit_cells_col;
+        std::vector<cell_t *> unit_cells;
         for (int y = 0; y < env.cells.size(); y++) {
             auto& row = env.cells[y];
+            unit_cells.clear();
             for (int x = 0; x < env.cells.size(); x++) {
                 auto& cell = row[x];
-                if (cell.type > cell_type_e::unit) unit_cells_col.push_back(x);
-                out << cell;
+                if (cell->type == cell_type_e::unit) unit_cells.push_back(cell.get());
+                out << *cell;
             }
             // Render hps
-            if (!unit_cells_col.empty()) out << "    ";
-            for (auto &unit_cell_col : unit_cells_col) {
-                auto& cell = row[unit_cell_col];
-                if (cell.type == cell_type_e::unit) {
-                    out << unit << ", ";
-                }
+            if (!unit_cells.empty()) out << "    ";
+            for (auto unit_cell : unit_cells) {
+                out << *(unit_cell->unit) << ", ";
             }
             out << std::endl;
-            unit_cells_col.clear();
         }
         out << std::endl;
         return out;

@@ -12,6 +12,7 @@
                 "-g",
                 "-O3",
                 "-DONLY_ACTIVATE=15",
+                "src/micropather_1_2_0/micropather.cpp",
                 "src/day1.cpp",
                 "src/day2.cpp",
                 "src/day3.cpp",

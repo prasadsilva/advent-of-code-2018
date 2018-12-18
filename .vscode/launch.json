@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/advent-of-code-2018",
-            "args": ["14"],
+            "args": ["15"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
