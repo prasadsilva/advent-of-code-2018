@@ -12,7 +12,7 @@
 
 const bool trace_read = false;
 const bool trace_elves = false;
-const bool trace1 = true;
+const bool trace1 = false;
 const bool trace2 = false;
 const bool enable_assertions = true;
 
@@ -148,6 +148,9 @@ struct map_t : public micropather::Graph {
     int map_width, map_height;
     int current_tick = 0;
     std::shared_ptr<micropather::MicroPather> pather = nullptr;
+    int elf_ap, goblin_ap;
+
+    map_t(int elf_attack_power = 3, int goblin_attack_power = 3) : elf_ap(elf_attack_power), goblin_ap(goblin_attack_power) {}
 
     // micropath::Graph interface
     float LeastCostEstimate(void* stateStart, void* stateEnd) {
@@ -310,7 +313,7 @@ struct map_t : public micropather::Graph {
         // Sort to get the shortest path to an attack cell
         std::sort(reachability.begin(), reachability.end()); 
         for (auto &r : reachability) {
-            std::cout << "\t\t\tRcost (" << r.source->x << "," << r.source->y << ")->(" << r.destination->x << "," << r.destination->y << ") : " << r.cost << std::endl;
+            if (trace1) std::cout << "\t\t\tRcost (" << r.source->x << "," << r.source->y << ")->(" << r.destination->x << "," << r.destination->y << ") : " << r.cost << std::endl;
         }
 
         return reachability;
@@ -401,6 +404,7 @@ struct map_t : public micropather::Graph {
                         new_cell->type = cell_type_e::unit;
                         auto goblin = std::make_shared<unit_t>();
                         goblin->type = unit_type_e::goblin;
+                        goblin->attack_power = env.goblin_ap;
                         goblin->x = x;
                         goblin->y = y;
                         new_cell->unit = goblin;
@@ -411,6 +415,7 @@ struct map_t : public micropather::Graph {
                         new_cell->type = cell_type_e::unit;
                         auto elf = std::make_shared<unit_t>();
                         elf->type = unit_type_e::elf;
+                        elf->attack_power = env.elf_ap;
                         elf->x = x;
                         elf->y = y;
                         new_cell->unit = elf;
@@ -507,6 +512,44 @@ namespace day15 {
     void problem2() {
         std::cout << "Day 15 - Problem 2" << std::endl;
         #if !defined(ONLY_ACTIVATE) || ONLY_ACTIVATE == 15
+
+        if (enable_assertions) {   
+            {
+                int deaths = std::numeric_limits<int>::max();
+                int elf_ap = 0;
+                int last_outcome = 0;
+                while (deaths > 0) {
+                    std::cout << "Trying elf attack power: " << elf_ap << std::endl;
+                    map_t test(elf_ap);
+                    read_day15_data(test, "data/day15/problem2/test1.txt");
+                    int initial_elves = test.elves.size();
+                    while (!test.game_over()) {
+                        test.tick();
+                    }
+                    deaths = initial_elves - test.elves.size();
+                    last_outcome = (test.elapsed_rounds() * test.total_remaining_hit_points());
+                    elf_ap++;
+                }
+                assert(last_outcome == 4988);
+            } 
+        }
+
+        int deaths = std::numeric_limits<int>::max();
+        int elf_ap = 0;
+        int last_outcome = 0;
+        while (deaths > 0) {
+            std::cout << "Trying elf attack power: " << elf_ap << std::endl;
+            map_t input(elf_ap);
+            read_day15_data(input, "data/day15/problem2/input.txt");
+            int initial_elves = input.elves.size();
+            while (!input.game_over()) {
+                input.tick();
+            }
+            deaths = initial_elves - input.elves.size();
+            last_outcome = (input.elapsed_rounds() * input.total_remaining_hit_points());
+            elf_ap++;
+        }
+        std::cout << "Result: " << last_outcome << std::endl;
 
         #endif
     }
