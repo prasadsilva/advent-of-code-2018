@@ -10,8 +10,8 @@
             "args": [
                 "-std=c++17",
                 "-g",
-                "-O3",
-                "-DONLY_ACTIVATE=15",
+                // "-O3",
+                "-DONLY_ACTIVATE=16",
                 "src/micropather_1_2_0/micropather.cpp",
                 "src/day1.cpp",
                 "src/day2.cpp",
@@ -28,6 +28,7 @@
                 "src/day13.cpp",
                 "src/day14.cpp",
                 "src/day15.cpp",
+                "src/day16.cpp",
                 "src/main.cpp",
                 "-o",
                 "advent-of-code-2018"
