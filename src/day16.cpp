@@ -53,6 +53,32 @@ struct instruction_t {
     }
 };
 
+struct program_t {
+    std::vector<instruction_t> instructions;
+
+    void remap_opcodes(const std::array<int, opcode_e::num_op_codes> &mapping) {
+        for (auto &instruction : instructions) {
+            instruction.opcode = mapping[instruction.opcode];
+        }
+    }
+
+    friend std::istream & operator >> (std::istream &in, program_t &program) {
+        instruction_t instruction;
+        while (!in.eof()) {
+            in >> instruction;
+            program.instructions.push_back(instruction);
+        }
+        return in;
+    }
+
+    friend std::ostream & operator << (std::ostream &out, const program_t &program) {
+        for (auto &instruction : program.instructions) {
+            out << instruction << std::endl;
+        }
+        return out;
+    }
+};
+
 struct device_state_t {
     std::array<int, 4> registers{0};
 
@@ -72,6 +98,13 @@ struct device_t {
     device_state_t state;
 
     void clear() { state.clear(); }
+
+    void run(const program_t &program) {
+        clear();
+        for (auto &instruction : program.instructions) {
+            process(instruction);
+        }
+    }
 
     void process(const instruction_t &instruction) {
         auto &r = state.registers;
@@ -258,7 +291,7 @@ struct instruction_tracer_t {
 struct opcode_mapper_t {
     std::array<std::set<int>, opcode_e::num_op_codes> internal_to_trace_opcode_mapping;
 
-    void process_traces(const std::vector<instruction_trace_t> &input) {
+    std::array<int, opcode_e::num_op_codes> process_traces(const std::vector<instruction_trace_t> &input) {
         std::fill(internal_to_trace_opcode_mapping.begin(), internal_to_trace_opcode_mapping.end(), std::set<int>());
         for (auto& trace : input) {
             auto trace_opcode = trace.event_instruction.opcode;
@@ -300,10 +333,17 @@ struct opcode_mapper_t {
                 mapping.erase(trace_opcode);
             }
         }
+
+        return trace_to_internal_mapping;
     }
 };
 
-void read_day16_data(instruction_tracer_t &outdata, const char* filepath) {
+void read_day16_trace_data(instruction_tracer_t &outdata, const char* filepath) {
+    std::ifstream input_stream(filepath);
+    input_stream >> outdata;
+}
+
+void read_day16_program_data(program_t &outdata, const char* filepath) {
     std::ifstream input_stream(filepath);
     input_stream >> outdata;
 }
@@ -316,12 +356,12 @@ namespace day16 {
 
         if (enable_assertions) {
             instruction_tracer_t tracer;
-            read_day16_data(tracer, "data/day16/problem1/test1_trace.txt");    
+            read_day16_trace_data(tracer, "data/day16/problem1/test1_trace.txt");    
             assert(tracer.get_samples_with_more_than_3_candidate_opcodes() == 1);
         }
 
         instruction_tracer_t tracer;
-        read_day16_data(tracer, "data/day16/problem1/input_trace.txt");
+        read_day16_trace_data(tracer, "data/day16/problem1/input_trace.txt");
         std::cout << "Result: " << tracer.get_samples_with_more_than_3_candidate_opcodes() << std::endl;
 
         #endif
@@ -332,12 +372,16 @@ namespace day16 {
         #if !defined(ONLY_ACTIVATE) || ONLY_ACTIVATE == 16
 
         instruction_tracer_t tracer;
-        read_day16_data(tracer, "data/day16/problem2/input_trace.txt");
+        read_day16_trace_data(tracer, "data/day16/problem2/input_trace.txt");
         opcode_mapper_t opcode_mapper;
-        opcode_mapper.process_traces(tracer.traces);
-        // TODO: Read program and remap opcodes
+        auto opcode_mapping = opcode_mapper.process_traces(tracer.traces);
+        // Read program and remap opcodes
+        program_t program;
+        read_day16_program_data(program, "data/day16/problem2/input_program.txt");
+        program.remap_opcodes(opcode_mapping);
+        // Run program in device
         device_t device;
-        // TODO: Run program in device
+        device.run(program);
         std::cout << "Result: " << device.state.registers[0] << std::endl;
 
         #endif
