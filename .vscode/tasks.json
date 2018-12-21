@@ -11,7 +11,7 @@
                 "-std=c++17",
                 "-g",
                 "-O3",
-                "-DONLY_ACTIVATE=17",
+                "-DONLY_ACTIVATE=18",
                 "src/micropather_1_2_0/micropather.cpp",
                 "src/day1.cpp",
                 "src/day2.cpp",
@@ -30,6 +30,7 @@
                 "src/day15.cpp",
                 "src/day16.cpp",
                 "src/day17.cpp",
+                "src/day18.cpp",
                 "src/main.cpp",
                 "-o",
                 "advent-of-code-2018"
