@@ -10,7 +10,7 @@
             "args": [
                 "-std=c++17",
                 "-g",
-                // "-O3",
+                "-O3",
                 "-DONLY_ACTIVATE=17",
                 "src/micropather_1_2_0/micropather.cpp",
                 "src/day1.cpp",
