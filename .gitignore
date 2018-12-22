@@ -46,3 +46,7 @@ advent-of-code-2018.dSYM
 
 # Output
 day17_result.txt
+
+# IDE
+.idea
+cmake-build-*
