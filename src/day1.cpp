@@ -4,39 +4,39 @@
 #include <fstream>
 #include <set>
 
-void read_day1_data(std::vector<int> &outdata, const char* filepath) {
-    std::ifstream inputStream(filepath);
-    std::istream_iterator<int> inputIterator(inputStream);
-    std::copy(inputIterator, std::istream_iterator<int>(), std::back_inserter(outdata));
-}
-
-int get_resulting_frequency(std::vector<int> &input) {
-    int result = 0;
-    for (const auto &value : input) {
-        result += value;
+namespace day1 {
+    
+    void read_day1_data(std::vector<int> &outdata, const char* filepath) {
+        std::ifstream inputStream(filepath);
+        std::istream_iterator<int> inputIterator(inputStream);
+        std::copy(inputIterator, std::istream_iterator<int>(), std::back_inserter(outdata));
     }
-    return result;
-}
 
-int get_first_repeating_frequency(std::vector<int> &input) {
-    std::set<int> seen_frequencies;
-    bool found = false;
-    int result = 0;
-    seen_frequencies.insert(result);    
-    do {
+    int get_resulting_frequency(std::vector<int> &input) {
+        int result = 0;
         for (const auto &value : input) {
             result += value;
-            // Check if result has been seen before
-            auto frequency_check = seen_frequencies.find(result);
-            found = frequency_check != seen_frequencies.end();
-            if (found) break;
-            seen_frequencies.insert(result);
         }
-    } while(!found);
-    return result;
-}
+        return result;
+    }
 
-namespace day1 {
+    int get_first_repeating_frequency(std::vector<int> &input) {
+        std::set<int> seen_frequencies;
+        bool found = false;
+        int result = 0;
+        seen_frequencies.insert(result);    
+        do {
+            for (const auto &value : input) {
+                result += value;
+                // Check if result has been seen before
+                auto frequency_check = seen_frequencies.find(result);
+                found = frequency_check != seen_frequencies.end();
+                if (found) break;
+                seen_frequencies.insert(result);
+            }
+        } while(!found);
+        return result;
+    }
 
     void problem1() {
         std::cout << "Day 1 - Problem 1" << std::endl;

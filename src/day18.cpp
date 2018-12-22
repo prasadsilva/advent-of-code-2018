@@ -10,151 +10,151 @@
 #include <array>
 #include <sstream>
 
-const bool trace_read = false;
-const bool trace1 = false;
-const bool trace2 = false;
-const bool enable_assertions = true;
-
-enum acre_type_e {
-    ground,
-    trees,
-    lumberyard,
-};
-
-struct surrounding_area_t {
-    int num_trees = 0;
-    int num_lumberyards = 0;
-    int num_ground = 0;
-
-    surrounding_area_t(std::vector<std::vector<acre_type_e>> &acres, int x, int y) {
-        bool check_left = false, check_right = false;
-        // Row above
-        if (y > 0) {
-            auto &row_above = acres[y - 1];
-            if (x > 0) count_acre(row_above[x - 1]);
-            count_acre(row_above[x]);
-            if (x < row_above.size() - 1) count_acre(row_above[x + 1]);
-        }        
-        // Same row
-        auto &row = acres[y];
-        if (x > 0) count_acre(row[x - 1]);
-        if (x < row.size() - 1) count_acre(row[x + 1]);
-        // Row below
-        if (y < acres.size() - 1) {
-            auto &row_below = acres[y + 1];
-            if (x > 0) count_acre(row_below[x - 1]);
-            count_acre(row_below[x]);
-            if (x < row_below.size() - 1) count_acre(row_below[x + 1]);
-        }
-    }
+namespace day18 {
     
-    friend std::ostream & operator << (std::ostream &out, const surrounding_area_t &surround_area) {
-        out << ".(" << surround_area.num_ground << ") |(" << surround_area.num_trees << ") #(" << surround_area.num_lumberyards << ")";
-        return out;
-    }
+    const bool trace_read = false;
+    const bool trace1 = false;
+    const bool trace2 = false;
+    const bool enable_assertions = true;
 
-private:
-    void count_acre(acre_type_e type) {
-        switch (type) {
-            case acre_type_e::ground: num_ground++; break;
-            case acre_type_e::lumberyard: num_lumberyards++; break;
-            case acre_type_e::trees: num_trees++; break;
+    enum acre_type_e {
+        ground,
+        trees,
+        lumberyard,
+    };
+
+    struct surrounding_area_t {
+        int num_trees = 0;
+        int num_lumberyards = 0;
+        int num_ground = 0;
+
+        surrounding_area_t(std::vector<std::vector<acre_type_e>> &acres, int x, int y) {
+            bool check_left = false, check_right = false;
+            // Row above
+            if (y > 0) {
+                auto &row_above = acres[y - 1];
+                if (x > 0) count_acre(row_above[x - 1]);
+                count_acre(row_above[x]);
+                if (x < row_above.size() - 1) count_acre(row_above[x + 1]);
+            }        
+            // Same row
+            auto &row = acres[y];
+            if (x > 0) count_acre(row[x - 1]);
+            if (x < row.size() - 1) count_acre(row[x + 1]);
+            // Row below
+            if (y < acres.size() - 1) {
+                auto &row_below = acres[y + 1];
+                if (x > 0) count_acre(row_below[x - 1]);
+                count_acre(row_below[x]);
+                if (x < row_below.size() - 1) count_acre(row_below[x + 1]);
+            }
         }
-    }
-};
+        
+        friend std::ostream & operator << (std::ostream &out, const surrounding_area_t &surround_area) {
+            out << ".(" << surround_area.num_ground << ") |(" << surround_area.num_trees << ") #(" << surround_area.num_lumberyards << ")";
+            return out;
+        }
 
-struct area_t {
-    std::vector<std::vector<acre_type_e>> acres;
+    private:
+        void count_acre(acre_type_e type) {
+            switch (type) {
+                case acre_type_e::ground: num_ground++; break;
+                case acre_type_e::lumberyard: num_lumberyards++; break;
+                case acre_type_e::trees: num_trees++; break;
+            }
+        }
+    };
 
-    void tick_one_minute() {
-        auto write_state = acres;
-        // An open acre will become filled with trees if three or more adjacent acres contained trees. Otherwise, nothing happens.
-        // An acre filled with trees will become a lumberyard if three or more adjacent acres were lumberyards. Otherwise, nothing happens.
-        // An acre containing a lumberyard will remain a lumberyard if it was adjacent to at least one other lumberyard and at least one acre containing trees. Otherwise, it becomes open.
-        for (int y = 0; y < acres.size(); y++) {
-            auto &read_row = acres[y];
-            auto &write_row = write_state[y];
-            for (int x = 0; x < read_row.size(); x++) {
-                surrounding_area_t surrounding_area(acres, x, y);
-                switch (read_row[x]) {
-                    case acre_type_e::ground: {
-                        if (surrounding_area.num_trees >= 3) {
-                            if (trace1) std::cout << "\t" << surrounding_area << " Changing (" << x << "," << y << ") to trees " << std::endl;
-                            write_row[x] = acre_type_e::trees;
+    struct area_t {
+        std::vector<std::vector<acre_type_e>> acres;
+
+        void tick_one_minute() {
+            auto write_state = acres;
+            // An open acre will become filled with trees if three or more adjacent acres contained trees. Otherwise, nothing happens.
+            // An acre filled with trees will become a lumberyard if three or more adjacent acres were lumberyards. Otherwise, nothing happens.
+            // An acre containing a lumberyard will remain a lumberyard if it was adjacent to at least one other lumberyard and at least one acre containing trees. Otherwise, it becomes open.
+            for (int y = 0; y < acres.size(); y++) {
+                auto &read_row = acres[y];
+                auto &write_row = write_state[y];
+                for (int x = 0; x < read_row.size(); x++) {
+                    surrounding_area_t surrounding_area(acres, x, y);
+                    switch (read_row[x]) {
+                        case acre_type_e::ground: {
+                            if (surrounding_area.num_trees >= 3) {
+                                if (trace1) std::cout << "\t" << surrounding_area << " Changing (" << x << "," << y << ") to trees " << std::endl;
+                                write_row[x] = acre_type_e::trees;
+                            }
+                            break;
                         }
-                        break;
-                    }
-                    case acre_type_e::trees: {
-                        if (surrounding_area.num_lumberyards >= 3) {
-                            if (trace1) std::cout << "\t" << surrounding_area << " Changing (" << x << "," << y << ") to lumberyard " << std::endl;
-                            write_row[x] = acre_type_e::lumberyard;
+                        case acre_type_e::trees: {
+                            if (surrounding_area.num_lumberyards >= 3) {
+                                if (trace1) std::cout << "\t" << surrounding_area << " Changing (" << x << "," << y << ") to lumberyard " << std::endl;
+                                write_row[x] = acre_type_e::lumberyard;
+                            }
+                            break;
                         }
-                        break;
-                    }
-                    case acre_type_e::lumberyard: {
-                        if (surrounding_area.num_lumberyards >= 1 && surrounding_area.num_trees >= 1) {
-                            // Stay a lumberyard
-                        } else {
-                            if (trace1) std::cout << "\t" << surrounding_area << " Changing (" << x << "," << y << ") to ground " << std::endl;
-                            write_row[x] = acre_type_e::ground;
+                        case acre_type_e::lumberyard: {
+                            if (surrounding_area.num_lumberyards >= 1 && surrounding_area.num_trees >= 1) {
+                                // Stay a lumberyard
+                            } else {
+                                if (trace1) std::cout << "\t" << surrounding_area << " Changing (" << x << "," << y << ") to ground " << std::endl;
+                                write_row[x] = acre_type_e::ground;
+                            }
+                            break;
                         }
-                        break;
                     }
                 }
             }
+            acres = write_state;
         }
-        acres = write_state;
-    }
 
-    int get_resource_value() {
-        int num_wooded_areas = 0, num_lumberyards = 0;
-        for (auto &row : acres) {
-            for (auto type : row) {
-                if (type == acre_type_e::trees) {
-                    num_wooded_areas++;
-                } else if (type == acre_type_e::lumberyard) {
-                    num_lumberyards++;
+        int get_resource_value() {
+            int num_wooded_areas = 0, num_lumberyards = 0;
+            for (auto &row : acres) {
+                for (auto type : row) {
+                    if (type == acre_type_e::trees) {
+                        num_wooded_areas++;
+                    } else if (type == acre_type_e::lumberyard) {
+                        num_lumberyards++;
+                    }
                 }
             }
+            return num_wooded_areas * num_lumberyards;
         }
-        return num_wooded_areas * num_lumberyards;
-    }
 
-    friend std::ostream & operator << (std::ostream &out, const area_t &area) {
-        for (auto &row : area.acres) {
-            for (auto type : row) {
-                switch (type) {
-                    case acre_type_e::ground: out << "."; break;
-                    case acre_type_e::lumberyard: out << "#"; break;
-                    case acre_type_e::trees: out << "|"; break;
-                }                
+        friend std::ostream & operator << (std::ostream &out, const area_t &area) {
+            for (auto &row : area.acres) {
+                for (auto type : row) {
+                    switch (type) {
+                        case acre_type_e::ground: out << "."; break;
+                        case acre_type_e::lumberyard: out << "#"; break;
+                        case acre_type_e::trees: out << "|"; break;
+                    }                
+                }
+                out << std::endl;
             }
             out << std::endl;
+            return out;
         }
-        out << std::endl;
-        return out;
-    }
-};
+    };
 
-void read_day18_data(area_t &outdata, const char* filepath) {
-    std::ifstream input_stream(filepath);
-    std::string line;
-    while (!input_stream.eof()) {
-        std::vector<acre_type_e> row;
-        getline(input_stream, line);
-        for (int i = 0; i < line.size(); i++) {
-            acre_type_e type = acre_type_e::ground;
-            switch (line[i]) {
-                case '|': type = acre_type_e::trees; break;
-                case '#': type = acre_type_e::lumberyard; break;
+    void read_day18_data(area_t &outdata, const char* filepath) {
+        std::ifstream input_stream(filepath);
+        std::string line;
+        while (!input_stream.eof()) {
+            std::vector<acre_type_e> row;
+            getline(input_stream, line);
+            for (int i = 0; i < line.size(); i++) {
+                acre_type_e type = acre_type_e::ground;
+                switch (line[i]) {
+                    case '|': type = acre_type_e::trees; break;
+                    case '#': type = acre_type_e::lumberyard; break;
+                }
+                row.push_back(type);
             }
-            row.push_back(type);
+            outdata.acres.push_back(row);
         }
-        outdata.acres.push_back(row);
     }
-}
-
-namespace day18 {
 
     void problem1() {
         std::cout << "Day 18 - Problem 1" << std::endl;

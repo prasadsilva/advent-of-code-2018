@@ -8,135 +8,135 @@
 #include <limits>
 #include <array>
 
-const bool trace_read = false;
-const bool trace1 = false;
-const bool trace2 = false;
-const bool enable_assertions = false;
+namespace day11 {
+    
+    const bool trace_read = false;
+    const bool trace1 = false;
+    const bool trace2 = false;
+    const bool enable_assertions = false;
 
-struct max_power_coord_t {
-    int x, y;
-    int power_level;
-};
+    struct max_power_coord_t {
+        int x, y;
+        int power_level;
+    };
 
-struct max_window_and_coord_t {
-    int x, y;
-    int window_sz;
-};
+    struct max_window_and_coord_t {
+        int x, y;
+        int window_sz;
+    };
 
-template <int serial_number>
-struct fuel_cell_t {
-    int x;
-    int y;
-    int power_level;
+    template <int serial_number>
+    struct fuel_cell_t {
+        int x;
+        int y;
+        int power_level;
 
-    void initialize(int _x, int _y) {
-        x = _x;
-        y = _y;
-        power_level = compute_power_level();
-    }
-
-    int get_rack_id() { return x + 10; }
-
-    int compute_power_level() {
-        // std::cout << "Compute " << x << ", " << y << std::endl;
-        int power_level = get_rack_id() * y;
-        power_level += serial_number;
-        power_level *= get_rack_id();
-
-        int div_100 = power_level / 100;
-        int hundreds_digit = div_100 % 10;
-        power_level = hundreds_digit;
-
-        power_level -= 5;
-
-        return power_level;
-    }
-};
-
-template <int serial_number>
-struct fuel_cell_grid_t {
-    std::array<std::array<fuel_cell_t<serial_number>, 300>, 300> fuel_cells;
-
-    std::vector<std::array<std::array<int, 300>, 300>> power_total_cache;
-    std::vector<std::array<std::array<bool, 300>, 300>> power_total_cache_calc_bit;
-
-    void initialize() {
-        for (int y = 0; y < 300; y++) {
-            for (int x = 0; x < 300; x++) {
-                fuel_cells[y][x].initialize(x + 1, y + 1);
-            }
+        void initialize(int _x, int _y) {
+            x = _x;
+            y = _y;
+            power_level = compute_power_level();
         }
-        
-        power_total_cache.resize(300);
-        power_total_cache_calc_bit.resize(300);
-    }
 
-    max_power_coord_t find_coord_of_largest_total_power(int window_sz) {
-        max_power_coord_t result;
-        int max_power = std::numeric_limits<int>::min();
-        int max_d = 300 - window_sz + 1;
-        int window_sz_idx = window_sz - 1;
+        int get_rack_id() { return x + 10; }
 
-        for (int y = 0; y < max_d; y++) {
-            for (int x = 0; x < max_d; x++) {
+        int compute_power_level() {
+            // std::cout << "Compute " << x << ", " << y << std::endl;
+            int power_level = get_rack_id() * y;
+            power_level += serial_number;
+            power_level *= get_rack_id();
 
-                int power = 0;
+            int div_100 = power_level / 100;
+            int hundreds_digit = div_100 % 10;
+            power_level = hundreds_digit;
 
-                if (power_total_cache_calc_bit[window_sz_idx][y][x]) {
-                    power = power_total_cache[window_sz_idx][y][x];
-                } else {
-                    // If we have cached value for window_sz_idx - 1
-                    if (window_sz_idx > 0 && power_total_cache_calc_bit[window_sz_idx - 1][y][x]) {
-                        power = power_total_cache[window_sz_idx - 1][y][x];
-                        // Add totals from right and bottom perimeter
-                        for (int j = 0; j < window_sz; j++) {
-                            power += fuel_cells[y + j][x + window_sz_idx].power_level;
-                        }
-                        for (int i = 0; i < (window_sz - 1); i++) { // Skip last cell (already added in vertical scan above)
-                            power += fuel_cells[y + window_sz_idx][x + i].power_level;
-                        }
+            power_level -= 5;
+
+            return power_level;
+        }
+    };
+
+    template <int serial_number>
+    struct fuel_cell_grid_t {
+        std::array<std::array<fuel_cell_t<serial_number>, 300>, 300> fuel_cells;
+
+        std::vector<std::array<std::array<int, 300>, 300>> power_total_cache;
+        std::vector<std::array<std::array<bool, 300>, 300>> power_total_cache_calc_bit;
+
+        void initialize() {
+            for (int y = 0; y < 300; y++) {
+                for (int x = 0; x < 300; x++) {
+                    fuel_cells[y][x].initialize(x + 1, y + 1);
+                }
+            }
+            
+            power_total_cache.resize(300);
+            power_total_cache_calc_bit.resize(300);
+        }
+
+        max_power_coord_t find_coord_of_largest_total_power(int window_sz) {
+            max_power_coord_t result;
+            int max_power = std::numeric_limits<int>::min();
+            int max_d = 300 - window_sz + 1;
+            int window_sz_idx = window_sz - 1;
+
+            for (int y = 0; y < max_d; y++) {
+                for (int x = 0; x < max_d; x++) {
+
+                    int power = 0;
+
+                    if (power_total_cache_calc_bit[window_sz_idx][y][x]) {
+                        power = power_total_cache[window_sz_idx][y][x];
                     } else {
-                        // Do full computation
-                        for (int j = 0; j < window_sz; j++) {
-                            for (int i = 0; i < window_sz; i++) {
-                                power += fuel_cells[y + j][x + i].power_level;
+                        // If we have cached value for window_sz_idx - 1
+                        if (window_sz_idx > 0 && power_total_cache_calc_bit[window_sz_idx - 1][y][x]) {
+                            power = power_total_cache[window_sz_idx - 1][y][x];
+                            // Add totals from right and bottom perimeter
+                            for (int j = 0; j < window_sz; j++) {
+                                power += fuel_cells[y + j][x + window_sz_idx].power_level;
                             }
-                        }    
+                            for (int i = 0; i < (window_sz - 1); i++) { // Skip last cell (already added in vertical scan above)
+                                power += fuel_cells[y + window_sz_idx][x + i].power_level;
+                            }
+                        } else {
+                            // Do full computation
+                            for (int j = 0; j < window_sz; j++) {
+                                for (int i = 0; i < window_sz; i++) {
+                                    power += fuel_cells[y + j][x + i].power_level;
+                                }
+                            }    
+                        }
+
+                        power_total_cache[window_sz_idx][y][x] = power;
+                        power_total_cache_calc_bit[window_sz_idx][y][x] = true;
                     }
 
-                    power_total_cache[window_sz_idx][y][x] = power;
-                    power_total_cache_calc_bit[window_sz_idx][y][x] = true;
-                }
-
-                if (power > max_power) {
-                    max_power = power;
-                    result = { x + 1, y + 1, power };
+                    if (power > max_power) {
+                        max_power = power;
+                        result = { x + 1, y + 1, power };
+                    }
                 }
             }
+
+            if (trace1) std::cout << "Coord for window " << window_sz << ": " << result.x << "," << result.y << " (" << result.power_level << ")" << std::endl;
+            return result;
         }
 
-        if (trace1) std::cout << "Coord for window " << window_sz << ": " << result.x << "," << result.y << " (" << result.power_level << ")" << std::endl;
-        return result;
-    }
-
-    max_window_and_coord_t find_coord_and_window_of_largest_total_power() {
-        max_window_and_coord_t result;
-        int max_power = std::numeric_limits<int>::min();
-        for (int window_sz = 1; window_sz <= 300; window_sz++) {
-            auto max_coord = find_coord_of_largest_total_power(window_sz);
-            if (max_coord.power_level > max_power) {
-                max_power = max_coord.power_level;
-                result.window_sz = window_sz;
-                result.x = max_coord.x;
-                result.y = max_coord.y;
+        max_window_and_coord_t find_coord_and_window_of_largest_total_power() {
+            max_window_and_coord_t result;
+            int max_power = std::numeric_limits<int>::min();
+            for (int window_sz = 1; window_sz <= 300; window_sz++) {
+                auto max_coord = find_coord_of_largest_total_power(window_sz);
+                if (max_coord.power_level > max_power) {
+                    max_power = max_coord.power_level;
+                    result.window_sz = window_sz;
+                    result.x = max_coord.x;
+                    result.y = max_coord.y;
+                }
             }
+            if (trace2) std::cout << "Max window and coord: " << result.x << "," << result.y << "," << result.window_sz << std::endl;
+            return result;
         }
-        if (trace2) std::cout << "Max window and coord: " << result.x << "," << result.y << "," << result.window_sz << std::endl;
-        return result;
-    }
-};
-
-namespace day11 {
+    };
 
     void problem1() {
         std::cout << "Day 11 - Problem 1" << std::endl;

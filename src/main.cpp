@@ -76,6 +76,10 @@ namespace day18 {
     void problem1();
     void problem2();
 }
+namespace day19 {
+    void problem1();
+    void problem2();
+}
 
 int main(int argc, char const *argv[])
 {
@@ -97,7 +101,8 @@ int main(int argc, char const *argv[])
         { day15::problem1, day15::problem2 },
         { day16::problem1, day16::problem2 },
         { day17::problem1, day17::problem2 },
-        { day18::problem1, day18::problem2 }
+        { day18::problem1, day18::problem2 },
+        { day19::problem1, day19::problem2 }
     };
 
     if (argc > 2) {
