@@ -294,6 +294,7 @@ namespace day19 {
 
     // Taking too long. Need to trace the execution to find patterns.
     // Alternatively can also trace the instructions in the program to identify the nested loops
+    // - See data/day19/instr_trace.txt
 
     // Current state [0, 5, 10551403, 1, 0, 123]
     // Pattern: r[5] is incrementing. Let's try setting it to r[2] - 1
