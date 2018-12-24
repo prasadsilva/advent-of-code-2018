@@ -1,0 +1,43 @@
+#ip 5
+0    seti 123 0 3           // r[3] = 123
+1    bani 3 456 3           // r[3] = r[3] & 456
+2    eqri 3 72 3            // r[3] = r[3] == 72
+3    addr 3 5 5             // ip = ip + r[3]
+4    seti 0 0 5             // ip = 0
+5    seti 0 0 3             // r[3] = 0                   //        00000000000000000
+6    bori 3 65536 2         // r[2] = r[3] | 65536        //        10000000000000000     BEGIN (LOOP C)                        Set r[2] to 65536 + r[3]
+7    seti 14070682 0 3      // r[3] = 14070682            // 110101101011001110011010                                           Set r[3] to 14070682
+8    bani 2 255 1           // r[1] = r[2] & 255          //                 11111111 (154) Bitmask 8 bits BEGIN (LOOP D)       Set r[1] to low 8 bits of r[2]
+9    addr 3 1 3             // r[3] = r[3] + r[1]         //                                                                    Set r[3] = r[3] + r[1]
+10   bani 3 16777215 3      // r[3] = r[3] & 16777215     // 111111111111111111111111                                           Set r[3] to low 24 bits of r[3]
+11   muli 3 65899 3         // r[3] = r[3] * 65899        //        10000000101101011                                           Set r[3] = r[3] * 65899
+12   bani 3 16777215 3      // r[3] = r[3] & 16777215     // 111111111111111111111111                                           Set r[3] to low 24 bits of r[3]
+13   gtir 256 2 1           // r[1] = 256 > r[2]          // --- COND FOR EXIT. If 256 > r[2], goto line 28. Otherwise loop begins from 17
+14   addr 1 5 5             // ip = ip + r[1]
+15   addi 5 1 5             // ip = ip + 1
+16   seti 27 8 5            // ip = 27
+17   seti 0 3 1             // r[1] = 0
+18   addi 1 1 4             // r[4] = r[1] + 1            // BEGIN (LOOP A)   r[1] has to increment 256 times to get out of LOOP A
+19   muli 4 256 4           // r[4] = r[4] * 256          //
+20   gtrr 4 2 4             // r[4] = r[4] > r[2]         //
+21   addr 4 5 5             // ip = ip + r[4]             // If r[4] > 65536:  JUMP to line 26, which goes to line 8 eventually
+22   addi 5 1 5             // ip = ip + 1                //
+23   seti 25 8 5            // ip = 25                    //
+24   addi 1 1 1             // r[1] = r[1] + 1            //
+25   seti 17 9 5            // ip = 17                    // END (LOOP A)
+26   setr 1 4 2             // r[2] = r[1]
+27   seti 7 5 5             // ip = 7                     //                                              END (LOOP D)
+28   eqrr 3 0 1             // r[1] = r[3] == r[0]
+29   addr 1 5 5             // ip = ip + r[1]             // --- EXIT PROGRAM if r[3] == r[0]
+30   seti 5 4 5             // ip = 5                     //                              END (LOOP C)
+
+r3 = 0
+r2 = 0
+r3 = 14070682
+r1 = 0
+r3 = 14070682
+r3 = 14070682
+r3 = 927243873118
+r3 = 1101011111100100000010101010101101011110  => 24 lsb => 000010101010101101011110 => 699230
+A = 14070682 + 154
+B =
