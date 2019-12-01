@@ -9,19 +9,42 @@
 #include <limits>
 #include <array>
 #include <sstream>
+#include <cmath>
 
 namespace day23 {
 
-  const bool trace_read = true;
+  const bool trace_read = false;
   const bool trace1 = true;
   const bool trace2 = false;
   const bool enable_assertions = true;
 
   using val_t = long;
 
-  struct nanobot_t {
+  val_t compute_manhattan_distance(val_t x1, val_t y1, val_t z1, val_t x2, val_t y2, val_t z2) {
+    return std::abs(x1 - x2) + std::abs(y1 - y2) + std::abs(z1 - z2);
+  }
+
+  struct point3 {
     val_t x, y, z;
+
+    val_t distance_from_origin() {
+      return compute_manhattan_distance(0, 0, 0, x, y, z);
+    }
+
+    friend std::ostream &operator<<(std::ostream &out, const point3 &pt) {
+      out << "(" << pt.x << "," << pt.y << "," << pt.z << ")";
+      return out;
+    }
+  };
+
+  struct nanobot_t {
+    point3 coord;
     val_t radius;
+
+    bool contains(const point3 &pt) {
+      auto dist = compute_manhattan_distance(pt.x, pt.y, pt.z, coord.x, coord.y, coord.z);
+      return dist <= radius;
+    }
 
     friend std::istream &operator>>(std::istream &in, nanobot_t &nanobot) {
       std::string line;
@@ -35,9 +58,9 @@ namespace day23 {
         throw new std::invalid_argument("Cannot parse nanobot!");
       }
 
-      nanobot.x = static_cast<val_t>(std::stoi(scan_matches[1].str()));
-      nanobot.y = static_cast<val_t>(std::stoi(scan_matches[2].str()));
-      nanobot.z = static_cast<val_t>(std::stoi(scan_matches[3].str()));
+      nanobot.coord.x = static_cast<val_t>(std::stoi(scan_matches[1].str()));
+      nanobot.coord.y = static_cast<val_t>(std::stoi(scan_matches[2].str()));
+      nanobot.coord.z = static_cast<val_t>(std::stoi(scan_matches[3].str()));
       nanobot.radius = static_cast<val_t>(std::stoi(scan_matches[4].str()));
 
       if (trace_read) {
@@ -48,54 +71,19 @@ namespace day23 {
     }
 
     friend std::ostream &operator<<(std::ostream &out, const nanobot_t &nanobot) {
-      std::cout << "pos=<" << nanobot.x << "," << nanobot.y << "," << nanobot.z << ">, r=" << nanobot.radius;
+      std::cout << "pos=<" << nanobot.coord.x << "," << nanobot.coord.y << "," << nanobot.coord.z << ">, r=" << nanobot.radius;
       return out;
     }
   };
 
-//  struct cell_t {
-//    val_t x, y, z;
-//    std::shared_ptr<nanobot_t> nanobot = nullptr;
-//  };
-
-  val_t compute_manhattan_distance(val_t x1, val_t y1, val_t z1, val_t x2, val_t y2, val_t z2) {
-    return std::abs(x1 - x2) + std::abs(y1 - y2) + std::abs(z1 - z2);
-  }
-
   struct env_t {
-    val_t max_x = 0, max_y = 0, max_z = 0;
     std::vector<std::shared_ptr<nanobot_t>> nanobots;
-//    std::vector<std::vector<std::vector<cell_t>>> cells;
 
     env_t(const std::vector<nanobot_t> &_nanobots) {
-//      // Find max dims
-//      for (auto &nanobot : _nanobots) {
-//        if (nanobot.x > max_x) max_x = nanobot.x;
-//        if (nanobot.y > max_y) max_y = nanobot.y;
-//        if (nanobot.z > max_z) max_z = nanobot.z;
-//      }
-//      // Reserve cells
-//      cells.resize(static_cast<unsigned long>(max_z + 1));
-//      for (val_t z = 0; z <= max_z; z++) {
-//        auto &slice = cells[z];
-//        slice.resize(static_cast<unsigned long>(max_y + 1));
-//        for (val_t y = 0; y <= max_y; y++) {
-//          auto &row = slice[y];
-//          row.resize(static_cast<unsigned long>(max_x + 1));
-//          for (val_t x = 0; x <= max_x; x++) {
-//            auto &cell = row[x];
-//            cell.x = x;
-//            cell.y = y;
-//            cell.z = z;
-//          }
-//        }
-//      }
-//      // Add nanobots to cells
       for (auto &_nanobot : _nanobots) {
         auto nanobot = std::make_shared<nanobot_t>();
         *nanobot = _nanobot;
         nanobots.push_back(nanobot);
-//        cells[_nanobot.z][_nanobot.y][_nanobot.x].nanobot = nanobot;
       }
     }
 
@@ -115,8 +103,8 @@ namespace day23 {
       int in_range_count = 0;
       for (const auto &other_nanobot : nanobots) {
         auto dist = compute_manhattan_distance(
-          nanobot->x, nanobot->y, nanobot->z,
-          other_nanobot->x, other_nanobot->y, other_nanobot->z
+          nanobot->coord.x, nanobot->coord.y, nanobot->coord.z,
+          other_nanobot->coord.x, other_nanobot->coord.y, other_nanobot->coord.z
         );
         if (dist <= nanobot->radius) {
           in_range_count++;
@@ -149,12 +137,12 @@ namespace day23 {
     }
   }
 
-    std::vector<nanobot_t> nanobots;
-    read_day23_data(nanobots, "data/day23/problem1/input.txt");
-    env_t env(nanobots);
-    auto nanobot = env.find_nanobot_with_largest_radius();
-    std::cout << "Result: " << env.find_nanobots_in_range_of(nanobot.get()) << std::endl;
-
+  std::vector<nanobot_t> nanobots;
+  read_day23_data(nanobots, "data/day23/problem1/input.txt");
+  env_t env(nanobots);
+  auto nanobot = env.find_nanobot_with_largest_radius();
+  std::cout << "Nanobot with largest radius: " << *nanobot << std::endl;
+  std::cout << "Result: " << env.find_nanobots_in_range_of(nanobot.get()) << std::endl;
 
 #endif
   }
@@ -165,12 +153,147 @@ namespace day23 {
 
     if (enable_assertions) {
       {
+        nanobot_t n{};
+        n.coord = {16, 12, 12};
+        n.radius = 4;
+        point3 pt{12, 12, 12};
+        assert(n.contains(pt) == true);
+      }
+
+      {
         std::vector<nanobot_t> nanobots;
         read_day23_data(nanobots, "data/day23/problem2/test1.txt");
         env_t env(nanobots);
 
+        // For every nanobot range
+        int max_intersections = 0;
+        val_t distance_with_max_intersections = std::numeric_limits<val_t>::max();
+        for (auto &nanobot : env.nanobots) {
+          // Go through all extreme points integer distances away on the line from origin to center of range
+          auto &c = nanobot->coord;
+          auto r = nanobot->radius;
+          std::array<point3, 27> points = {{
+                                            { c.x - r,      c.y - r,      c.z - r   },
+                                            { c.x - r,      c.y - r,      c.z       },
+                                            { c.x - r,      c.y - r,      c.z + r   },
+                                            { c.x - r,      c.y,          c.z - r   },
+                                            { c.x - r,      c.y,          c.z       },
+                                            { c.x - r,      c.y,          c.z + r   },
+                                            { c.x - r,      c.y + r,      c.z - r   },
+                                            { c.x - r,      c.y + r,      c.z       },
+                                            { c.x - r,      c.y + r,      c.z + r   },
+
+                                            { c.x,          c.y - r,      c.z - r   },
+                                            { c.x,          c.y - r,      c.z       },
+                                            { c.x,          c.y - r,      c.z + r   },
+                                            { c.x,          c.y,          c.z - r   },
+                                            { c.x,          c.y,          c.z       },
+                                            { c.x,          c.y,          c.z + r   },
+                                            { c.x,          c.y + r,      c.z - r   },
+                                            { c.x,          c.y + r,      c.z       },
+                                            { c.x,          c.y + r,      c.z + r   },
+
+                                            { c.x + r,      c.y - r,      c.z - r   },
+                                            { c.x + r,      c.y - r,      c.z       },
+                                            { c.x + r,      c.y - r,      c.z + r   },
+                                            { c.x + r,      c.y,          c.z - r   },
+                                            { c.x + r,      c.y,          c.z       },
+                                            { c.x + r,      c.y,          c.z + r   },
+                                            { c.x + r,      c.y + r,      c.z - r   },
+                                            { c.x + r,      c.y + r,      c.z       },
+                                            { c.x + r,      c.y + r,      c.z + r   },
+          }};
+          // If point is in range, check against other ranges to determine maximal coverage
+          for (auto &pt : points) {
+            int intersections = 0;
+            for (auto &tbot : env.nanobots) {
+              if (tbot->contains(pt)) {
+                intersections++;
+              }
+            }
+            if (intersections >= max_intersections) {
+              max_intersections = intersections;
+              val_t distance = pt.distance_from_origin();
+              std::cout << "Max intersections: " << intersections << " at " << pt << " (" << distance << ")" << std::endl;
+              if (intersections > max_intersections) {
+                distance_with_max_intersections = distance;
+              } else if (distance <= distance_with_max_intersections) {
+                distance_with_max_intersections = distance;
+              }
+            }
+          }
+        }
+        std::cout << "M : " << distance_with_max_intersections << std::endl;
+        assert(distance_with_max_intersections == 36);
       }
     }
+
+    std::vector<nanobot_t> nanobots;
+    read_day23_data(nanobots, "data/day23/problem2/input.txt");
+    env_t env(nanobots);
+    // For every nanobot range
+    int max_intersections = 0;
+    val_t distance_with_max_intersections = std::numeric_limits<val_t>::max();
+    for (auto &nanobot : env.nanobots) {
+      // Go through all extreme points integer distances away on the line from origin to center of range
+      auto &c = nanobot->coord;
+      auto r = nanobot->radius;
+      std::array<point3, 27> points = {{
+                                         { c.x - r,      c.y - r,      c.z - r   },
+                                         { c.x - r,      c.y - r,      c.z       },
+                                         { c.x - r,      c.y - r,      c.z + r   },
+                                         { c.x - r,      c.y,          c.z - r   },
+                                         { c.x - r,      c.y,          c.z       },
+                                         { c.x - r,      c.y,          c.z + r   },
+                                         { c.x - r,      c.y + r,      c.z - r   },
+                                         { c.x - r,      c.y + r,      c.z       },
+                                         { c.x - r,      c.y + r,      c.z + r   },
+
+                                         { c.x,          c.y - r,      c.z - r   },
+                                         { c.x,          c.y - r,      c.z       },
+                                         { c.x,          c.y - r,      c.z + r   },
+                                         { c.x,          c.y,          c.z - r   },
+                                         { c.x,          c.y,          c.z       },
+                                         { c.x,          c.y,          c.z + r   },
+                                         { c.x,          c.y + r,      c.z - r   },
+                                         { c.x,          c.y + r,      c.z       },
+                                         { c.x,          c.y + r,      c.z + r   },
+
+                                         { c.x + r,      c.y - r,      c.z - r   },
+                                         { c.x + r,      c.y - r,      c.z       },
+                                         { c.x + r,      c.y - r,      c.z + r   },
+                                         { c.x + r,      c.y,          c.z - r   },
+                                         { c.x + r,      c.y,          c.z       },
+                                         { c.x + r,      c.y,          c.z + r   },
+                                         { c.x + r,      c.y + r,      c.z - r   },
+                                         { c.x + r,      c.y + r,      c.z       },
+                                         { c.x + r,      c.y + r,      c.z + r   },
+                                       }};
+      // If point is in range, check against other ranges to determine maximal coverage
+      for (auto &pt : points) {
+        int intersections = 0;
+        for (auto &tbot : env.nanobots) {
+          if (tbot->contains(pt)) {
+            intersections++;
+          }
+        }
+        if (intersections >= max_intersections) {
+          max_intersections = intersections;
+          val_t distance = pt.distance_from_origin();
+          std::cout << "Max intersections: " << intersections << " at " << pt << " (" << distance << ")" << std::endl;
+          if (intersections > max_intersections) {
+            distance_with_max_intersections = distance;
+          } else if (distance < distance_with_max_intersections) {
+            distance_with_max_intersections = distance;
+          }
+        }
+      }
+    }
+    std::cout << "M : " << distance_with_max_intersections << std::endl;
+    std::cout << "Result: " << distance_with_max_intersections << std::endl;
+    // 129475294 is too low
+    //  90055549 is too low
+    // 154678717 not the right answer
 
 #endif
   }
